@@ -39,6 +39,10 @@
 				Gamma(20) LogLk = -1757170.448 alpha = 0.295 rescaling lengths by 4.795   
 				Total time: 1261.53 seconds Unique: 9501/9752 Bad splits: 79/9498 Worst delta-LogLk 8.486`
 
+			`classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)`
+
+			
+
 	 - treePL being used to make trees ultrametric
 
 	 	+ treePL requires the number of sites. I'm going to assume this would be the number of bases. So, I need a python script that determines the number of bases in each record. This should be the same because these are alignments, but we will see.
