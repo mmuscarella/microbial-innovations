@@ -3,3 +3,6 @@ SeqChecks-checkpoint.ipynb
 test-checkpoint.ipynb
 
 data/*.logfile
+analyses/.Rhistory
+SeqChecks.ipynb
+test.ipynb
