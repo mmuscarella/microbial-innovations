@@ -44,8 +44,8 @@ plot(LTP, show.tip.label = F)
 ## Import Taxonomy Information
 ```{r}
 LTP.tax <- read.tax("../data/LTPs123_unique.pds.wang.taxonomy", format = "rdp", col.tax = 2)
-
-
+NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "rdp", col.tax = 2)
+RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = "rdp", col.tax = 2)
 ```
 
 
@@ -154,6 +154,34 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 
 ```
 
+## Exploratory Tree with Domain Grouping
+```{r, results = "hide"}
+png(filename="../figures/LTP_explore.png",
+    width = 1600, height = 1600, res = 96*2)
+
+
+LTP.2 <- LTP
+groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
+livingTree <- groupOTU(LTP.2, groupInfo, group_name = "Domain")
+levels(attributes(livingTree)$Domain) <- names(groupInfo)
+ggtree(livingTree, aes(color = Domain), layout="rectangular") + 
+  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
+  #geom_tiplab(size=1) + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA))
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_explore.png")
+grid.raster(img)
+```
+
+
+
 
 ## Example Trees
 ```{r}
@@ -161,6 +189,10 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 nwk <- system.file("extdata", "sample.nwk", package="ggtree")
 tree <- read.tree(nwk)
 ggtree(tree) + geom_text2(aes(subset=!isTip, label=node), hjust=-.3) + geom_tiplab()
+ggtree(tree, layout="fan", open.angle=180) + ggtitle("(Phylogram) circular layout")
+ggtree(tree, layout="unrooted") + ggtitle("(Phylogram) circular layout")
+
+
 
 MRCA(tree, tip = c("A", "E"))
 p <- ggtree(tree)
@@ -171,12 +203,50 @@ viewClade(p+geom_tiplab(), node = 21)
 tree <- groupClade(tree, node = 21)
 ggtree(tree, aes(color=group, linetype=group))
 
+tree <- groupClade(tree, node=c(21, 17))
+ggtree(tree, aes(color=group, linetype=group)) + geom_tiplab(aes(subset=(group==2)))
+
 tree <- groupClade(tree, node = c(21,17))
 ggtree(tree, aes(color=group, linetype = group)) + geom_tiplab(aes(subset=(group==2)))
 
-data("chiroptera")
+tree <- groupOTU(tree, focus=c("D", "E", "F", "G"))
+
+ggtree(tree, aes(color=group)) + geom_tiplab()
+
+library("ape")
+data(chiroptera)
 groupInfo <- split(chiroptera$tip.label, gsub("_\\w+", "", chiroptera$tip.label))
 chiroptera <- groupOTU(chiroptera, groupInfo)
-ggtree(chiroptera, aes(color = group), layout="circular") + geom_tiplab(size = 1, aes(angle = angle)) # + theme(legend.position="right")
+ggtree(chiroptera, aes(color=group), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
 
+
+LTP$tip.label[1:5]
+LTP.tax[1:5,1:5]
+
+sum(LTP$tip.label %in% LTP.tax$OTU) == length(LTP$tip.label %in% LTP.tax$OTU)
+
+LTP$tip.label == LTP.tax$OTU
+LTP.tax2 <- LTP.tax[match(LTP$tip.label, LTP.tax$OTU), ]
+
+all(LTP$tip.label == LTP.tax2$OTU)
+
+LTP.2 <- LTP
+groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
+livingTree <- groupOTU(LTP.2, groupInfo, group_name = "Domain")
+levels(attributes(livingTree)$Domain) <- names(groupInfo)
+ggtree(livingTree, aes(color = Domain), layout="rectangular") + 
+  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
+  #geom_tiplab(size=1) + 
+  theme(legend.position="right")
+
+
+library("colorspace")
+ggtree(livingTree, aes(color=group, linetype=group)) + geom_tiplab() + 
+  geom_text2(aes(subset=!isTip, label = node), hjust=-0.3) + 
+  scale_color_manual(values=c("black", rainbow_hcl(10))) + theme(legend.position="right")
+
+
+groupInfo <- split(chiroptera$tip.label, gsub("_\\w+", "", chiroptera$tip.label))
+chiroptera <- groupOTU(chiroptera, groupInfo)
+ggtree(chiroptera, aes(color=group), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
 ```
