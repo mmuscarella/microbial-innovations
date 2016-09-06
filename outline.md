@@ -39,9 +39,14 @@
 				Gamma(20) LogLk = -1757170.448 alpha = 0.295 rescaling lengths by 4.795   
 				Total time: 1261.53 seconds Unique: 9501/9752 Bad splits: 79/9498 Worst delta-LogLk 8.486`
 
-			`classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)`
+			classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax, cutoff=80, probs=T)
 
-			
+			classify.seqs(fasta=nmicrobiol201648_s7.txt, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
+
+
+			classify.seqs(fasta=rdp_download_9752seqs.fa, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
+
+
 
 	 - treePL being used to make trees ultrametric
 
@@ -50,7 +55,12 @@
 2. Tree Patterns
 
 	- Branch Lengths
+
+		+ branch length distribution (see how James did this)
+
 	- Bursts: size & distribution
+
+		+
 
 3. Geological Time Events
 
