@@ -23,6 +23,8 @@ ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
 # Load Packages
 require("ape"); require("png"); require("grid")
 require("ggtree")
+require("phytools")
+library("colorspace")
 
 # Load Source Functions
 source("../bin/MothurTools.R")
@@ -50,13 +52,14 @@ RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = 
 
 
 # Edge Length Distribution
-```{r}
+```{r, results = "hide"}
 LTP.edges <- LTP$edge.length
 NTL.edges <- NTL$edge.length
 RDP.edges <- RDP$edge.length
 
 png(filename="../figures/BranchLengths.png",
     width = 800, height = 1600, res = 96*2)
+
 layout(matrix(1:3, 3, 1))
 par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
 
@@ -92,7 +95,6 @@ axis(2, labels = T, las = 1, lwd = 1.5)
 
 mtext("Edge Length", side = 1, cex = 1, line = 2.5)
 mtext("Frequency", side = 2, cex = 1, line = 4)
-
 
 
 # Close Plot Device
@@ -138,6 +140,8 @@ scatterhist = function(x, y, xlab="", ylab=""){
   barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
 }
 
+png(filename="../figures/NodeSupport.png",
+    width = 800, height = 800, res = 96*2)
 
 # Upstream
 scatterhist(x = log10(node.tab$edge_up), y = as.numeric(node.tab$support),
@@ -152,23 +156,29 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -1.75]), na.rm = T)
 mean(as.numeric(node.tab$support[log10(node.tab$edge_up) > 0.75]), na.rm = T)
 mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/NodeSupport.png")
+grid.raster(img)
 ```
 
-## Exploratory Tree with Domain Grouping
+## LTP Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
 png(filename="../figures/LTP_explore.png",
     width = 1600, height = 1600, res = 96*2)
-
 
 LTP.2 <- LTP
 groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
 livingTree <- groupOTU(LTP.2, groupInfo, group_name = "Domain")
 levels(attributes(livingTree)$Domain) <- names(groupInfo)
 ggtree(livingTree, aes(color = Domain), layout="rectangular") + 
-  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
-  #geom_tiplab(size=1) + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA))
-
+  geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+            hjust=-0.1, vjust = -0.5, size = 2) + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) 
 
 # Close Plot Device
 dev.off()
@@ -180,73 +190,51 @@ img <- readPNG("../figures/LTP_explore.png")
 grid.raster(img)
 ```
 
+## Identify the LTP Node that seperates bacteria and archaea
+```{r, results = "hide"}
+png(filename="../figures/LTP_archaea.png",
+    width = 1600, height = 1600, res = 96*2)
+par(mar=c(1,1,1,3))
+cp <- ggtree(livingTree, aes(color = Domain), layout="rectangular") %>% collapse(node=18228)
+cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=23, 
+                 colour="black", fill = "gray80") + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) +
+  geom_text2(aes(subset=(node == 18228), label = "Archaea"), 
+             show.legend = FALSE, hjust=-0.1, size = 3) + 
+  guides(colour = guide_legend(override.aes = list(shape = NA, label = NA)))
 
-
-
-## Example Trees
-```{r}
-
-nwk <- system.file("extdata", "sample.nwk", package="ggtree")
-tree <- read.tree(nwk)
-ggtree(tree) + geom_text2(aes(subset=!isTip, label=node), hjust=-.3) + geom_tiplab()
-ggtree(tree, layout="fan", open.angle=180) + ggtitle("(Phylogram) circular layout")
-ggtree(tree, layout="unrooted") + ggtitle("(Phylogram) circular layout")
-
-
-
-MRCA(tree, tip = c("A", "E"))
-p <- ggtree(tree)
-MRCA(p, tip=c('A', 'E'))
-
-viewClade(p+geom_tiplab(), node = 21)
-
-tree <- groupClade(tree, node = 21)
-ggtree(tree, aes(color=group, linetype=group))
-
-tree <- groupClade(tree, node=c(21, 17))
-ggtree(tree, aes(color=group, linetype=group)) + geom_tiplab(aes(subset=(group==2)))
-
-tree <- groupClade(tree, node = c(21,17))
-ggtree(tree, aes(color=group, linetype = group)) + geom_tiplab(aes(subset=(group==2)))
-
-tree <- groupOTU(tree, focus=c("D", "E", "F", "G"))
-
-ggtree(tree, aes(color=group)) + geom_tiplab()
-
-library("ape")
-data(chiroptera)
-groupInfo <- split(chiroptera$tip.label, gsub("_\\w+", "", chiroptera$tip.label))
-chiroptera <- groupOTU(chiroptera, groupInfo)
-ggtree(chiroptera, aes(color=group), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
-
-
-LTP$tip.label[1:5]
-LTP.tax[1:5,1:5]
-
-sum(LTP$tip.label %in% LTP.tax$OTU) == length(LTP$tip.label %in% LTP.tax$OTU)
-
-LTP$tip.label == LTP.tax$OTU
-LTP.tax2 <- LTP.tax[match(LTP$tip.label, LTP.tax$OTU), ]
-
-all(LTP$tip.label == LTP.tax2$OTU)
-
-LTP.2 <- LTP
-groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
-livingTree <- groupOTU(LTP.2, groupInfo, group_name = "Domain")
-levels(attributes(livingTree)$Domain) <- names(groupInfo)
-ggtree(livingTree, aes(color = Domain), layout="rectangular") + 
-  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
-  #geom_tiplab(size=1) + 
-  theme(legend.position="right")
-
-
-library("colorspace")
-ggtree(livingTree, aes(color=group, linetype=group)) + geom_tiplab() + 
-  geom_text2(aes(subset=!isTip, label = node), hjust=-0.3) + 
-  scale_color_manual(values=c("black", rainbow_hcl(10))) + theme(legend.position="right")
-
-
-groupInfo <- split(chiroptera$tip.label, gsub("_\\w+", "", chiroptera$tip.label))
-chiroptera <- groupOTU(chiroptera, groupInfo)
-ggtree(chiroptera, aes(color=group), layout='circular') + geom_tiplab(size=1, aes(angle=angle))
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_archaea.png")
+grid.raster(img)
 ```
+
+## Reroot LTP Tree
+```{r, results = "hide"}
+png(filename="../figures/LTP_root.png",
+    width = 1600, height = 1600, res = 96*2)
+
+livingTree.r <- midpoint.root(livingTree)
+livingTree.r2 <- groupOTU(livingTree.r, groupInfo, group_name = "Domain")
+levels(attributes(livingTree.r2)$Domain) <- c("root", names(groupInfo))
+rt <- ggtree(livingTree.r2, aes(color = Domain), layout="rectangular")
+rt + geom_point2(aes(subset=(node == 11934)), size=3, shape=23, 
+                 colour="black", fill = "gray80") + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(values=c("black", ggplotColours(n = 2))) 
+
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_root.png")
+grid.raster(img)
+```
+
+
