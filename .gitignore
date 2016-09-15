@@ -6,3 +6,4 @@ data/*.logfile
 analyses/.Rhistory
 SeqChecks.ipynb
 test.ipynb
+.DS_Store
