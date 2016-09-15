@@ -49,7 +49,11 @@ read.tax <- function(taxonomy = " ", format = "rdp", col.tax = "3"){
         }}
       tax.info[i,] <- tax.split
     }
-    tax <- cbind(OTU = tax_raw[,1],tax.info)
+    tax.otu.raw <- tax_raw[,1]
+    tax.otu.r <- gsub(",.+$", "", tax.otu.raw)
+    tax.otu <- gsub("___.+$", "_", tax.otu.r)
+    #tax.otu <- sapply(strsplit(tax.otu.raw, ","), "[[", 1)
+    tax <- cbind(OTU = tax.otu,tax.info)
     for (i in 2:7){
       tax[,i] <- gsub("\\(.*$", "", tax[,i])
     }
