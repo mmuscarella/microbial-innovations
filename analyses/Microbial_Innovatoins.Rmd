@@ -111,9 +111,9 @@ mtext("Frequency", side = 2, cex = 1, line = 4)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/BranchLengths.png")
 grid.raster(img)
 ```
@@ -150,6 +150,9 @@ scatterhist = function(x, y, xlab="", ylab=""){
   par(mar=c(5,0,1,1))
   barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
 }
+```
+
+```{r, results = "hide"}
 
 png(filename="../figures/NodeSupport.png",
     width = 800, height = 800, res = 96*2)
@@ -170,9 +173,9 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NodeSupport.png")
 grid.raster(img)
 ```
@@ -196,9 +199,9 @@ ggtree(livingTree, aes(color = Domain), layout="rectangular") +
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_explore.png")
 grid.raster(img)
 ```
@@ -220,9 +223,9 @@ cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_archaea.png")
 grid.raster(img)
 ```
@@ -244,9 +247,9 @@ rt + geom_point2(aes(subset=(node == 11934)), size=4, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_root.png")
 grid.raster(img)
 ```
@@ -264,7 +267,7 @@ The most common are chronos, chronopl, chronoMPL. But I don't know how they comp
 
 The output file was `LTP.dated.tree`
 
-```{r}
+```{r, results = "hide"}
 LTP.um <- read.tree("../data/LTP.dated.tree")
 
 png(filename="../figures/LTP_dated.png",
@@ -281,16 +284,16 @@ um + geom_point2(aes(subset=(node == 11934)), size=4, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_dated.png")
 grid.raster(img)
 
 ```
 
 ## Branch Lenght Comparision
-```{r}
+```{r, results = "hide"}
 png(filename="../figures/Branch_Comparision.png",
     width = 800, height = 800, res = 96*2)
 
@@ -337,9 +340,9 @@ box(lwd = 2)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/Branch_Comparision.png")
 grid.raster(img)
 ```
@@ -376,7 +379,7 @@ for (i in 1:dim(um.thres)[1]){
 }
 ```
 
-```{r}
+```{r, results = "hide"}
 png(filename="../figures/Tree_Topology.png",
     width = 1600, height = 1600, res = 96*2)
 
@@ -416,13 +419,16 @@ box(lwd = 2)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/Tree_Topology.png")
 grid.raster(img)
 ```
 
+
+
+# Repeat with Other trees (still working here)
 
 ## NTL Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
@@ -444,9 +450,9 @@ ggtree(newTree, aes(color = Domain), layout="rectangular") +
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NTL_explore.png")
 grid.raster(img)
 ```
@@ -473,9 +479,9 @@ cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=23,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NTL_archaea.png")
 grid.raster(img)
 ```
