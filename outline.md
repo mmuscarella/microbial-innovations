@@ -46,11 +46,16 @@
 
 			classify.seqs(fasta=rdp_download_9752seqs.fa, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
 
-
-
 	 - treePL being used to make trees ultrametric
 
-	 	+ treePL requires the number of sites. I'm going to assume this would be the number of bases. So, I need a python script that determines the number of bases in each record. This should be the same because these are alignments, but we will see.
+
+	 		+ treePL requires the number of sites. I'm going to assume this would be the number of bases. So, I need a python script that determines the number of bases in each record. This should be the same because these are alignments, but we will see.
+
+		-
+
+		+ We have had to make changes to the treePL code. The original code ignores branches that are under a set threshold. However, we do not want to ignore the distance represented by these brances. So we rewrote the code to add the distance of branches which are removed to the downstream branches at the given node.
+
+		+ We have now had some discussion about identifying bursts in ultrametric trees.  
 
 2. Tree Patterns
 
