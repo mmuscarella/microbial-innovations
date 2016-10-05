@@ -25,6 +25,9 @@ require("ape"); require("png"); require("grid")
 require("ggtree")
 require("phytools")
 library("colorspace")
+require("simecol")
+require("picante")
+
 
 # Load Source Functions
 source("../bin/MothurTools.R")
@@ -111,9 +114,9 @@ mtext("Frequency", side = 2, cex = 1, line = 4)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/BranchLengths.png")
 grid.raster(img)
 ```
@@ -150,6 +153,9 @@ scatterhist = function(x, y, xlab="", ylab=""){
   par(mar=c(5,0,1,1))
   barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
 }
+```
+
+```{r, results = "hide"}
 
 png(filename="../figures/NodeSupport.png",
     width = 800, height = 800, res = 96*2)
@@ -170,9 +176,9 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NodeSupport.png")
 grid.raster(img)
 ```
@@ -196,9 +202,9 @@ ggtree(livingTree, aes(color = Domain), layout="rectangular") +
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_explore.png")
 grid.raster(img)
 ```
@@ -220,9 +226,9 @@ cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_archaea.png")
 grid.raster(img)
 ```
@@ -244,9 +250,9 @@ rt + geom_point2(aes(subset=(node == 11934)), size=4, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_root.png")
 grid.raster(img)
 ```
@@ -264,7 +270,7 @@ The most common are chronos, chronopl, chronoMPL. But I don't know how they comp
 
 The output file was `LTP.dated.tree`
 
-```{r}
+```{r, results = "hide"}
 LTP.um <- read.tree("../data/LTP.dated.tree")
 
 png(filename="../figures/LTP_dated.png",
@@ -281,16 +287,16 @@ um + geom_point2(aes(subset=(node == 11934)), size=4, shape=18,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/LTP_dated.png")
 grid.raster(img)
 
 ```
 
 ## Branch Lenght Comparision
-```{r}
+```{r, results = "hide"}
 png(filename="../figures/Branch_Comparision.png",
     width = 800, height = 800, res = 96*2)
 
@@ -337,22 +343,24 @@ box(lwd = 2)
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/Branch_Comparision.png")
 grid.raster(img)
 ```
 
 ## Phylogeny Topological Features
 ```{r}
-tree.thres <- data.frame(matrix(NA, 100, 4))
+tree.thres <- data.frame(matrix(NA, 100, 5))
 colnames(tree.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
 tree.thres$threshold <- seq(0.01, 0.15, length.out = 100)
+tree.thres$threshold <- 10^c(seq(-3, 0, length.out = 100))
 
-um.thres <- data.frame(matrix(NA, 100, 4))
+
+um.thres <- data.frame(matrix(NA, 100, 5))
 colnames(um.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
-um.thres$threshold <- seq(1, 50, length.out = 100)
+um.thres$threshold <- 10^c(seq(-3, 2, length.out = 100))
 
 phy1 <- livingTree.r2
 phy2 <- livingTree.um
@@ -364,6 +372,7 @@ for (i in 1:dim(tree.thres)[1]){
   tree.thres[i, 2] <- phy.grained$Nnode
   tree.thres[i, 3] <- sum(polys[which(as.numeric(names(polys)) > 2)]) 
   tree.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+  tree.thres[i, 5] <- length(poly.size[which(poly.size > 3)])
 }
 
 for (i in 1:dim(um.thres)[1]){
@@ -373,41 +382,57 @@ for (i in 1:dim(um.thres)[1]){
   um.thres[i, 2] <- phy.grained$Nnode
   um.thres[i, 3] <- sum(polys[which(as.numeric(names(polys)) > 2)]) 
   um.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+  um.thres[i, 5] <- length(poly.size[which(poly.size > 3)])
 }
 ```
 
-```{r}
+```{r, results = "hide"}
 png(filename="../figures/Tree_Topology.png",
     width = 1600, height = 1600, res = 96*2)
 
 layout(matrix(1:6, 3))
 par(mar = c(2,4,0.5,0.5), oma = c(3,1.5,3.5,1.5))
-plot(tree.thres$nodes ~ tree.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(tree.thres$nodes ~ log10(tree.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2,
+     xaxt = "n", ylim = c(0,15000))
+axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
 mtext("# Nodes", side = 2, line = 2.5)
 mtext("Original Tree", side = 3, line = 1, outer = F)
 box(lwd = 2)
-plot(tree.thres$polytomies ~ tree.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(tree.thres$polytomies ~ log10(tree.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2, 
+     xaxt = "n", ylim = c(0,2000))
+axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
 mtext("# Polytomies", side = 2, line = 2.5)
 box(lwd = 2)
-plot(tree.thres$avg.polytomy ~ tree.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(log10(tree.thres$avg.polytomy) ~ log10(tree.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2, 
+     xaxt = "n", ylim = c(0,2.5))
+axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
 mtext("Threshold (substitutions)", side =1, line = 2.5, cex = 1)
 mtext("Average Polytomy Size", side = 2, line = 2.5)
 box(lwd = 2)
 
-plot(um.thres$nodes ~ um.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(um.thres$nodes ~ log10(um.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2,
+     xaxt = "n", ylim = c(0,15000), xlim = c(-3,2))
+axis(side = 1, at = seq(-3,2,1), 
+     labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
 mtext("# Nodes", side = 2, line = 2.5)
 mtext("Ultrametric Tree", side = 3, line = 1, outer = F)
 box(lwd = 2)
-plot(um.thres$polytomies ~ um.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(um.thres$polytomies ~ log10(um.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2,
+     xaxt = "n", ylim = c(0,1500), xlim = c(-3,2))
+axis(side = 1, at = seq(-3,2,1), 
+     labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
 mtext("# Polytomies", side = 2, line = 2.5)
 box(lwd = 2)
-plot(um.thres$avg.polytomy ~ um.thres$threshold,
-     xlab = "", ylab = "", type = "l", lwd = 2)
+plot(um.thres$avg.polytomy ~ log10(um.thres$threshold),
+     xlab = "", ylab = "", type = "l", lwd = 2,
+     xaxt = "n", ylim = c(0,50), xlim = c(-3,2))
+axis(side = 1, at = seq(-3,2,1), 
+     labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
 mtext("Threshold (Ma)", side =1, line = 2.5, cex = 1)
 mtext("Average Polytomy", side = 2, line = 2.5)
 box(lwd = 2)
@@ -423,6 +448,179 @@ img <- readPNG("../figures/Tree_Topology.png")
 grid.raster(img)
 ```
 
+## Calculate Local Minimums from Edge Lengths and Maximum from Polytomies
+```{r}
+den.dis <- density(log10(LTP.edges))
+mins <- peaks(den.dis$x, den.dis$y, mode = "min")
+maxs <- peaks(den.dis$x, den.dis$y, mode = "max")
+
+mins; maxs
+
+```
+
+## Obsever Polytomies through time
+```{r}
+time.thres <- data.frame(matrix(NA, 100, 4))
+colnames(time.thres) <- c("threshold", "Nnodes", "Npolytomies", "avg.polytomy")
+time.thres$threshold <- 10^c(seq(-3, 0, length.out = 100))
+
+thres.info <- vector(mode = "list", length = 100)
+
+phy1 <- livingTree.r2
+
+for (i in 1:dim(time.thres)[1]){
+  phy.grained <- di2multi2(phy1, time.thres[i,1])
+  poly.size <- table(phy.grained$edge[,1])
+  polys <- table(table(phy.grained$edge[,1]))
+  time.thres[i, 2] <- phy.grained$Nnode
+  time.thres[i, 3] <- length(poly.size[which(poly.size > 2)])
+  time.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+  aged <- node.age(phy.grained)
+  node.info <- data.frame(matrix(NA, 4, length(aged$node.label) - 1))
+  row.names(node.info) <- c("Nodes", "Node_Age", "Downstream_Branches",
+                                             "Length_Upstream")
+  node.info[1, ] <- as.numeric(aged$node.label[2:length(aged$node.label)])
+  tips <- length(aged$tip.label)
+  nodes <- aged$Nnode
+  node.info[2, ] <- as.numeric(aged$ages[(tips + 2):(tips + nodes)])
+  for (j in 2:length(aged$node.label)){
+    node.info[3, j - 1] <- as.numeric(length(which(aged$edge[, 1] == (tips + j))))
+    node.info[4, j - 1] <- as.numeric(aged$edge.length[which(aged$edge[ , 2] == (tips + j))])
+  }
+  thres.info[[i]] <- as.data.frame(t(as.matrix((node.info))))
+}
+```
+
+```{r}
+str(time.thres)
+str(thres.info)
+i = 80
+test <- as.data.frame(thres.info[[i]])
+plot(Node_Age ~ log10(Length_Upstream), data = test[which(test$Downstream_Branches > 2), ])
+legend("bottomleft",legend = paste("threshold =", round(log10(time.thres$threshold[i]), 5)), bg = "gray", text.width = 0.5, box.col = "gray")
+```
+
+
+# Identify polytomies in gene tree and plot in the ultrametric tree
+```{r}
+# Trees
+str(livingTree.r2)
+str(livingTree.um)
+
+LTP.r.edges <- livingTree.r2$edge.length
+LTP.u.edges <- livingTree.um$edge.length
+den.dis.r <- density(log10(LTP.r.edges))
+den.dis.u <- density(log10(LTP.u.edges))
+mins.r <- peaks(den.dis.r$x, den.dis.r$y, mode = "min")
+mins.u <- peaks(den.dis.u$x, den.dis.u$y, mode = "min")
+
+mins.r$x
+mins.u$x
+thres.test1 <- mins.r$x[1]
+thres.test2 <- mins.r$x[2]
+
+
+test.phy <- di2multi3(phy1 = livingTree.r2, phy2 = livingTree.um, tol = (10^thres.test1) * 10)
+
+poly.node <- test.phy$multi.new
+test.phy <- groupOTU(test.phy, groupInfo, group_name = "Domain")
+levels(attributes(test.phy)$Domain) <- c("root", names(groupInfo), "polytomy")
+
+test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular")
+test.tree + geom_point2(aes(subset=(node == 11934)), size=1, shape=18, 
+                 colour="black", fill = "gray80") + 
+  geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
+              colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[1:3]), 
+                     labels = c("polytomy", "Archaea", "Bacteria")) 
+
+
+
+```
+
+# Polytomy Movie
+```{r}
+system("rm ../figures/movie/*.png")
+
+threshold <- 10^c(seq(-2.5, -1, length.out = 50))
+
+for (i in threshold){
+  thres = i
+  outname <- paste("../figures/movie/T", round(thres, 4), ".png", sep = "")
+  test.phy <- di2multi3(phy1 = livingTree.r2, phy2 = livingTree.um, 
+                        tol = thres)
+  poly.node <- test.phy$multi.new
+  test.phy <- node.age(test.phy)
+  test.phy <- groupOTU(test.phy, groupInfo, group_name = "Domain")
+  levels(attributes(test.phy)$Domain) <- c("polytomy", names(groupInfo))
+  
+  test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular") 
+  test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
+                colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+    theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) + 
+    scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
+                       labels = c("polytomy", "Archaea", "Bacteria")) + 
+    annotate("text", hjust = 0, x = max(test.phy$ages) * 0.05, 
+             y = length(test.phy$tip.label) * 0.95, 
+             label = paste("Threshold =", round(thres, 4)))
+  ggsave(outname, width = 6, height = 4, dpi = 250)
+  print(paste("Threshold", round(i, 4), "done"))
+}
+
+system("convert -loop 10 -delay 100 '../figures/movie/T*.png' '../figures/movie/Test.gif'")
+
+```
+
+
+
+thresholds <- 10^c(seq(-3, 0, length.out = 100))
+thres.info <- data.frame(threshold = rep(NA, 100), Nnodes = rep(NA, 100), node.info = NA)
+
+time.thres <- list()
+for (i in 1:length(thresholds)){
+  time.thres[[i]] <- thres.info
+  time.thres[[i]]$threshold <- thresholds[i]
+}
+
+
+time.thres <- vector(mode = "list", length = 100)
+
+for (i in 1:length(time.thres)){
+  time.thres[[i]] <- list(threshold = NA, Nnodes = NA, nodes = NA)
+}
+
+time.thres <- data.frame(matrix(NA, 100, 5))
+colnames(time.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
+time.thres$threshold <- 10^c(seq(-3, 0, length.out = 100))
+time.thres <- as.list(t(time.thres))
+
+
+um.thres <- data.frame(matrix(NA, 100, 5))
+colnames(um.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
+um.thres$threshold <- 10^c(seq(-3, 2, length.out = 100))
+
+phy1 <- livingTree.r2
+phy2 <- livingTree.um
+
+for (i in 1:dim(tree.thres)[1]){
+  phy.grained <- di2multi2(phy1, tree.thres[i,1])
+  polys <- table(table(phy.grained$edge[,1]))
+  poly.size <- table(phy.grained$edge[,1])
+  tree.thres[i, 2] <- phy.grained$Nnode
+  tree.thres[i, 3] <- sum(polys[which(as.numeric(names(polys)) > 2)]) 
+  tree.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+  tree.thres[i, 5] <- length(poly.size[which(poly.size > 3)])
+}
+
+
+
+
+
+
+```
+
+# Repeat with Other trees (still working here)
 
 ## NTL Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
@@ -444,9 +642,9 @@ ggtree(newTree, aes(color = Domain), layout="rectangular") +
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NTL_explore.png")
 grid.raster(img)
 ```
@@ -473,9 +671,9 @@ cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=23,
 # Close Plot Device
 dev.off()
 graphics.off()
-#```
+```
 ## Show Plot
-#```{r}
+```{r}
 img <- readPNG("../figures/NTL_archaea.png")
 grid.raster(img)
 ```
