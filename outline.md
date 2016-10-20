@@ -41,6 +41,8 @@
 
 			classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax, cutoff=80, probs=T)
 
+			classify.seqs(fasta=LTPs123_unique.fasta, template=silva.nr_v123.align, taxonomy=silva.nr_v123.tax, cutoff=50, probs=F)
+
 			classify.seqs(fasta=nmicrobiol201648_s7.txt, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
 
 
