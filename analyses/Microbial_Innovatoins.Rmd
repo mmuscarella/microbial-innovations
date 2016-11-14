@@ -63,9 +63,9 @@ RDP <- read.tree("../data/RDP.tree")
 
 ## Import Taxonomy Information
 ```{r}
-LTP.tax <- read.tax("../data/LTPs123_unique.nr_v123.wang.taxonomy", format = "rdp", col.tax = 2)
-NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "rdp", col.tax = 2)
-RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = "rdp", col.tax = 2)
+LTP.tax <- read.tax("../data/LTPs123_unique.nr_v123.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
+NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
+RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
 ```
 
 
@@ -247,6 +247,7 @@ png(filename="../figures/LTP_root.png",
     width = 1600, height = 1600, res = 96*2)
 
 livingTree.r <- midpoint.root(livingTree)
+groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
 livingTree.r2 <- groupOTU(livingTree.r, groupInfo, group_name = "Domain")
 levels(attributes(livingTree.r2)$Domain) <- c("root", names(groupInfo))
 rt <- ggtree(livingTree.r2, aes(color = Domain), layout="rectangular")
@@ -270,7 +271,88 @@ grid.raster(img)
 
 ## Export Rooted Tree
 ```{r}
-write.tree(livingTree.r, file = "../data/LTP.rooted.tree")
+write.tree(livingTree.r, file = "../data/LTP.rooted.tre")
+write.nexus(livingTree.r, file = "../data/LTP.rooted.nex")
+```
+
+## LTP Exploratory Tree with Cyano Grouping
+```{r, results = "hide"}
+png(filename="../figures/LTP_Cyano.png",
+    width = 1600, height = 1600, res = 96*2)
+
+LTP.tax.full <- read.tax("../data/LTPs123_unique.full.taxonomy", col.tax = 2, tax.levels = 7)
+LTP.tax.rooted <- LTP.tax.full[match(livingTree.r$tip.label, LTP.tax.full$OTU), ]
+all.equal(as.factor(LTP.tax.rooted$OTU), as.factor(livingTree.r$tip.label))
+
+LTP.cyano <- LTP.tax.rooted$Phylum
+
+for (i in 1:length(LTP.cyano)){
+  if (LTP.cyano[i] == "Cyanobacteria"){
+    LTP.cyano[i] = "Cyanobacteria"
+  } else {
+    if (LTP.tax.rooted$Domain[i] == "Archaea"){
+      LTP.cyano[i] = "Archaea"
+    } else {
+      LTP.cyano[i] = "Other Bacteria"
+    }
+  }
+}
+
+groupInfo <- split(livingTree.r$tip.label, LTP.cyano)
+
+# Only 16 Cyanos?
+length(grep("[C|c]yano*", LTP.tax.rooted$Phylum))
+
+LTP.cy <- groupOTU(livingTree.r, groupInfo, group_name = "Cyano")
+levels(attributes(LTP.cy)$Cyano) <- c("Root", names(groupInfo))
+
+
+LT <- ggtree(LTP.cy, aes(color = Cyano, layout="rectangular"))
+
+LT + geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+            hjust=-0.1, vjust = -0.5, size = 2) + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)])) 
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Clean Up
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_Cyano.png")
+grid.raster(img)
+```
+
+# Isolate Cyanobacteria and Identify the LTP Node that seperates cyanos
+```{r, results = "hide"}
+png(filename="../figures/LTP_Cyano2.png",
+    width = 1600, height = 1600, res = 96*2)
+
+viewClade(LT + #geom_tiplab() +
+            geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+            hjust=-0.1, vjust = -0.5, size = 2) + 
+            theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+            scale_color_manual(values=c(ggplotColours(n = 4)[c(3,4,2,1)])), 
+          node=14077)
+
+LTP.tax.full[which(LTP.tax.full$OTU %in% livingTree.Cyano$tip.label), ]
+
+livingTree.Cyano <- extract.clade(livingTree.r, 14157)
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Clean Up
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_Cyano2.png")
+grid.raster(img)
 ```
 
 ## Make Tree Ultrametric
