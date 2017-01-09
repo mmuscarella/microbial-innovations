@@ -56,7 +56,7 @@ run.all <- FALSE
 
 ## Import Tree Files
 ```{r}
-LTP <- read.tree("../data/LTPs123.tree")
+GG <- read.tree("../data/LTPs123.tree")
 NTL <- read.tree("../data/NTL.tree")
 RDP <- read.tree("../data/RDP.tree")
 ```
