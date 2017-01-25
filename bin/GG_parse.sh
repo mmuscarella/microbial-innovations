@@ -2,6 +2,7 @@
 
 echo "Parsing Green Genes Data"
 
+rm ./IMG.align
 rm ./IMG.fasta
 
 cat GG_to_IMGv350.txt | while read -a p; do
@@ -13,6 +14,7 @@ cat GG_to_IMGv350.txt | while read -a p; do
   #gg=${GG[0]}
   #echo $gg
   #echo $gg >> test.txt
+  grep -m1 -A1 "^>$GG$" gg_13_5_ssualign.fasta >> IMG.align
   grep -m1 -A1 "^>$GG$" gg_13_5.fasta >> IMG.fasta
   # grep -A1 "^>$gg$" gg_13_5.fasta | wc -l
   # that part could be improved, search for best sequence
