@@ -1,0 +1,452 @@
+---
+title: "Microbial Innovations: Simulations"
+author: "Mario E Muscarella"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+  - \usepackage{graphics}
+output: 
+  pdf_document: 
+    fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+# Knitr Options
+knitr::opts_chunk$set(echo = TRUE)
+
+# Clear Environment and Set Working Directory
+rm(list=ls())
+setwd("~/GitHub/microbial-innovations/analyses")
+
+# Load Packages
+library("phytools")
+library("ape")
+library("mnormt")
+library("MASS")
+library("expm")
+library("diagram")
+library("adephylo")
+```
+
+
+# Mock Data: 
+To test trait innovation approaches, we are going to work with some mock data. 
+The goal is to have managable trees with traits that we can test various methods.
+
+# Simulate Phylogenetic Tree of OTUs
+```{r}
+# Set Seed for Reproducibility
+set.seed(149)
+
+# Generate a tree
+#tree <- pbtree(n = 100, scale = 1)
+tree <- rcoal(n = 100, rooted = T)
+tree$tip.label <- paste("OTU", sprintf("%05d", seq(1:100)), sep = "")
+
+# Re Order Tree
+tree <- reorder(tree)
+```
+
+# Siulate Traits Data using Markov Model for Trait Evolution
+```{r}
+a <- 0.7
+b <- 0.4
+Q <- matrix(c(a, 1 - a, b, 1 - b), 2, 2, byrow = T)
+
+eig.Q <- eigen(Q)
+
+# prob
+twostep.trans <- Q %*% Q
+init.dist = matrix(c(0.4, 0.6), 1, 2)
+init.dist %*% twostep.trans
+
+
+C <- eigen(Q)$vectors
+D <- diag(eigen(Q)$values)
+
+init.dist %*% (C %*% exp(D*0.5) %*% ginv(C))
+
+```
+
+
+```{r}
+library(expm)
+library(markovchain)
+library(diagram)
+library(pracma)
+
+stateNames <- c("Rain","Nice","Snow")
+Oz <- matrix(c(.5,.25,.25,.5,0,.5,.25,.25,.5),
+             nrow=3, byrow=TRUE)
+row.names(Oz) <- stateNames; colnames(Oz) <- stateNames
+Oz
+
+
+plotmat(Oz,pos = c(1,2),
+        lwd = 1, box.lwd = 2,
+        cex.txt = 0.8,
+        box.size = 0.1,
+        box.type = "circle",
+        box.prop = 0.5,
+        box.col = "light yellow",
+        arr.length=.1,
+        arr.width=.1,
+        self.cex = .4,
+        self.shifty = -.01,
+        self.shiftx = .13,
+        main = "")
+
+Oz3 <- Oz %^% 3
+round(Oz3,3)
+
+u <- c(0, 1, 0)
+round(u %*% Oz3,3)
+
+
+```
+
+
+
+
+
+
+
+# Trait Evolution
+```{r}
+# Create Tree
+
+# Set Seed for Reproducibility
+set.seed(199)
+
+# Generate a tree
+#tree <- pbtree(n = 100, scale = 1)
+tree <- rcoal(n = 100, rooted = T)
+tree$tip.label <- paste("OTU", sprintf("%05d", seq(1:100)), sep = "")
+
+# Re Order Tree
+tree <- reorder(tree)
+
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 1, cex = 0.5)
+
+# Generate Traits Under MC Model
+set.seed(171)
+str(tree)
+summary(tree$edge.length)
+
+tree$edge.length <- tree$edge.length * 100
+summary(tree$edge.length)
+
+int.trait <- rep(NA, tree$Nnode)
+int.traits <- seq(from = 101, to = 100 + length(int.trait)) 
+
+traits <- matrix(NA, nrow = (tree$Nnode + length(tree$tip.label)), ncol = 3)
+colnames(traits) <- c("Parent", "Offspring", "Trait")
+traits <- as.data.frame(traits)
+
+traitNames <- c("Off","On")
+traitStates <- c(0,1)
+Q <- matrix(c(0.978, 0.012, 0.015, 0.985), 2, 2, byrow = T)
+
+traits[1,] <- c("None", "101", "Off")
+
+for (i in 1:dim(tree$edge)[1]){
+  traits[i +1,1:2] <- tree$edge[i, ]
+  t <- as.integer(round(tree$edge.length[i], 0))
+  p <- tree$edge[i,1]
+  o <- tree$edge[i,2]
+  init <- traits$Trait[which(traits$Offspring == as.character(p))]
+  if (init == "Off"){u <- c(1,0)} else {
+    if (init == "On"){u <- c(0,1)}}
+  prob <- u %*% (Q %^% t)
+  s <- sample(traitNames, size = 1, prob = prob)
+  traits[i + 1, 1] <- p 
+  traits[i + 1, 2] <- o
+  traits[i + 1, 3] <- s
+}
+
+node.traits <- traits[which(as.numeric(traits$Offspring) > length(tree$tip.label)), ]
+node.traits2 <- node.traits[order(as.numeric(node.traits$Offspring)), ]
+
+t.col <- node.traits2$Trait
+t.col <- gsub("Off", "gray", t.col)
+t.col <- gsub("On", "white", t.col)
+
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 1, cex = 0.5)
+nodelabels(int.traits, cex = 0.5, frame = "circle", bg = t.col)
+
+```
+
+# MCtraits Test Function
+```{r}
+
+
+a <- 0.7
+b <- 0.55
+
+t = 0.1
+
+Q <- matrix(c(a, 1-a, 1-b, b), 2, 2, byrow = T)
+
+x <- ((a - 1)/(a + b - 2)) * log(a + b - 1)
+y <- ((b - 1)/(a + b - 2)) * log(a + b - 1)
+
+H <- matrix(c(x, -x, -y, y), 2, 2, byrow = T)
+
+C <- eigen(H)$vectors
+D <- diag(eigen(H)$values)
+
+C %*% ginv(C)
+C %*% Matrix::solve(C)
+
+Q2 <- Q %^% t
+M <- C %*% expm(D * t) %*% ginv(C)
+M2 <- expm(H * t)
+rowSums(Q2)
+rowSums(M)
+rowSums(M2)
+
+```
+
+# Generate Tree
+```{r}
+# Set Seed for Reproducibility
+set.seed(199)
+
+# Generate a tree
+#tree <- pbtree(n = 100, scale = 1)
+tree <- rcoal(n = 100, rooted = T)
+tree$tip.label <- paste("OTU", sprintf("%05d", seq(1:100)), sep = "")
+
+# Re Order Tree
+tree <- reorder(tree)
+```
+
+# Visulaize Tree
+```{r}
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 1, cex = 0.5)
+```
+
+# Define Markov Chain Trait Model Function
+```{r}
+MCtrait <- function(t = 5, a = 0.7, b = 0.5){
+  Q <- matrix(c(a, 1-a, 1-b, b), 2, 2, byrow = T)
+
+  x <- ((a - 1)/(a + b - 2)) * log(a + b - 1)
+  y <- ((b - 1)/(a + b - 2)) * log(a + b - 1)
+
+  H <- matrix(c(x, -x, -y, y), 2, 2, byrow = T)
+  C <- eigen(H)$vectors
+  D <- diag(eigen(H)$values)
+
+  M <- expm(H * t)
+  M2 <- C %*% expm(D * t) %*% ginv(C)
+  
+  return(list(M = M2, Q = Q))
+}
+```
+
+# Generate Traits Under Markov Chain Trait Model
+```{r}
+# Set Seed for Reproducibility
+set.seed(171)
+
+# Generate Traits Matrix
+traits <- matrix(NA, nrow = (tree$Nnode + length(tree$tip.label)), ncol = 3)
+colnames(traits) <- c("Parent", "Offspring", "Trait")
+traits <- as.data.frame(traits)
+
+# Define Trait States
+traitNames <- c("Off","On")
+
+# Define Root Ancestor Traits
+traits[1,] <- c("None", "101", "Off")
+
+# Run Trait Model Given the Tree
+for (i in 1:dim(tree$edge)[1]){
+  traits[i +1,1:2] <- tree$edge[i, ]
+  t <- tree$edge.length[i]
+  p <- tree$edge[i,1]
+  o <- tree$edge[i,2]
+  init <- traits$Trait[which(traits$Offspring == as.character(p))]
+  if (init == "Off"){u <- c(1,0)} else {
+    if (init == "On"){u <- c(0,1)}}
+  M <- MCtrait(t = t , a = 0.5, b = 0.55)
+  prob <- round(u %*% M$M, 4)
+  s <- sample(traitNames, size = 1, prob = prob)
+  traits[i + 1, 1] <- p 
+  traits[i + 1, 2] <- o
+  traits[i + 1, 3] <- s
+}
+
+node.traits <- traits[which(as.numeric(traits$Offspring) > length(tree$tip.label)), ]
+node.traits2 <- node.traits[order(as.numeric(node.traits$Offspring)), ]
+
+tip.traits <- traits[which(as.numeric(traits$Offspring) <= length(tree$tip.label)), ]
+tip.traits2 <- tip.traits[order(as.numeric(tip.traits$Offspring)), ]
+
+n.col <- node.traits2$Trait
+n.col <- gsub("On", "white", gsub("Off", "gray", n.col))
+
+t.col <- tip.traits2$Trait
+t.col <- gsub("On", "white", gsub("Off", "gray", t.col))
+```
+
+# Plot MC Model Traits on Tree
+```{r}
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 2, cex = 0.3)
+nodelabels(node.traits2$Offspring, cex = 0.25, frame = "circle", bg = n.col)
+tiplabels(pch = 22, bg = t.col, adj = c(1.5, 0.5))
+```
+
+# Conceptual Figure for MC Trait Model
+```{r}
+plotmat(M$Q,pos = c(2),
+        lwd = 1, box.lwd = 2,
+        cex.txt = 0.8,
+        box.size = 0.1,
+        box.type = "circle",
+        box.prop = 0.5,
+        box.col = "light yellow",
+        arr.type = "triangle",
+        arr.length= 0.3,
+        arr.width= 0.2,
+        self.cex = 0.4,
+        self.shifty = 0.03,
+        self.shiftx = c(-0.13, 0.13),
+        shadow.size = 0.001,
+        main = "",
+        name = c("Off", "On"))
+```
+
+
+# Predict Traits with Ancestral State Reconstruction
+```{r}
+Obs.Traits <- data.frame(OTU = tree$tip.label, Traits = tip.traits2$Trait)
+
+# Use ACE function for Baysian Posterior Probabilities
+ASR <- ace(Obs.Traits$Traits, tree, type = "d", model = "ARD", CI = T,
+           marginal = T)
+
+# Use Simmap Function to run Markov Chain Monte Carlo for Trait Statse on Edges
+# MCMC For Time in each state on each edge
+x <- Obs.Traits$Traits; names(x) <- tree$tip.label
+ASR.2 <- make.simmap(tree, x, Q = "mcmc", model = "ARD", pi = c(1,0))
+edge <- ASR.2$mapped.edge / tree$edge.length
+```
+
+# Plot ASR Results
+```{r}
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 2, cex = 0.3)
+
+tiplabels(pch = 22, bg = t.col, adj = c(1.5, 0.5))
+
+nodelabels(text = node.traits2$Offspring, cex = 0.5, frame = "none", adj = c(0.5,-2.2))
+nodelabels(thermo = ASR$lik.anc, cex = 0.4, piecol = c("gray", "white"))
+
+edgelabels(pie = edge, cex = 0.4, piecol = c("gray", "white"))
+
+```
+
+# Define Trait Conservation Function
+```{r}
+# Define Function
+ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9){
+
+  # Import Tree and Root  if Needed
+  if (is.rooted(tree) == FALSE){
+    root_tree <- midpoint.root(tree)
+  } else {
+    root_tree <- tree
+  }
+  
+  # Import Traits into Function
+  table <- traits
+  
+  # Drop tips not found in trait table
+  z <- subset(tree$tip.label, !(tree$tip.label %in% table[,1]) )
+  if (length(z) > 0){
+    drop.tip(tree,z)
+  }
+  
+  # Replace any negative branch lengths
+  root_tree$edge.length[root_tree$edge.length <= 0] = 0.00001
+  
+  # ID all subtrees
+  subtree <- subtrees(root_tree, wait = FALSE)
+
+  # Initializing Results Table
+  y = rep(NA, (length(subtree) * (dim(table)[2] - 1)))
+  cluster_size_tab <- data.frame(trait = NA, subtree = NA, node = NA, 
+                                 distance = NA, cluster_size = NA)
+
+  # Loop Through Traits
+  for (i in 2:ncol(table)){
+    print(paste("Analyzing Trait", i - 1, "of", 
+                ncol(table)[[1]] - 1, "...", sep = " "), quote = F)
+    
+    # Make Temp Table
+    table_tmp <- data.frame(ID = table[, 1], Trait = table[,i])
+
+    # Remove All Entries Not in Tree and Sort by ID
+    table2 <- table_tmp[which(table_tmp$ID %in% root_tree$tip.label), ]
+    table2 <- table2[sort(table2$ID), ]
+    
+    # Initialize Temp Result Vectors
+    positives <- vector(mode = "character", length = 0)
+    cluster_size <- numeric(length=0)
+    cluster_dist <- numeric(length = 0)
+    node_positive <- vector(mode = "character", length = 0)
+    
+    # Loop through all subtrees and determine if any subtrees have >90% positives
+    for (j in 1:length(subtree)){
+      tip_names <- subtree[[j]]$tip.label
+      if (mean(table2$Trait[which(table2$ID %in% tip_names)]) > cutoff){
+        match_test <- match(tip_names, positives)
+        if (all(is.na(match_test))){
+          positives <- c(positives,tip_names)
+          node_positive <- subtree[[j]]$node.label[1]
+          cluster_dist <- distRoot(subtree[[j]], tip_names, method = c("p"))
+          cluster_size <- c(cluster_size, mean(cluster_dist))
+
+          cluster_size_tab[j + length(subtree) * (i - 2), ] <- c(i - 1, j, node_positive, 
+                                     mean(cluster_dist), length(cluster_dist))
+          
+        } else {
+          if (any(is.na(match_test))) {
+            print("some NAs - something is weird")
+          } 
+        }
+      }
+    }
+  }
+  data.out <- cluster_size_tab[complete.cases(cluster_size_tab), ]
+  return(data.out)
+}
+```
+
+# Run Trait Conservation Function
+```{r}
+# Define Traits
+x.2 <- as.numeric(gsub("Off", 0, gsub("On", 1, x)))
+traits <- data.frame(OTU = names(x), Traits1 = x.2, Traits2 = rev(x.2))                        
+conserve <- ConsenTrait(tree, traits = traits, cutoff = 0.75)
+nodes <- conserve$node[which(conserve$trait == 1)]
+```
+
+# Plot Trait Conservation Results
+```{r}
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 2, cex = 0.3)
+tiplabels(pch = 22, bg = t.col, adj = c(1.5, 0.5))
+
+# nodelabels(text = node.traits2$Offspring, cex = 0.5, frame = "none", adj = c(0.5,-2.2))
+
+nodelabels(node = c(nodes), pch = 21, bg = "white", cex = 2.5)
+nodelabels(node = c(nodes), text = c(nodes), cex = 0.5, frame = "none")
+```
+
+
+
+
+
+
+
