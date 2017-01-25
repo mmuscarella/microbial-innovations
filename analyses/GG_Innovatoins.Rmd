@@ -6,9 +6,10 @@ header-includes:
   - \usepackage{array}
   - \usepackage{graphics}
 output: 
-  pdf_document:
-  fig_caption: true
+  pdf_document: 
+    fig_caption: yes
 ---
+
 
 ## Initial Setup
 ```{r}
@@ -54,90 +55,65 @@ opar <- par(no.readonly = TRUE)  # Saves plot defaults
 run.all <- FALSE
 ```
 
-## Import Tree Files
+## Import Green Genes Tree File
 ```{r}
-GG <- read.tree("../data/LTPs123.tree")
-NTL <- read.tree("../data/NTL.tree")
-RDP <- read.tree("../data/RDP.tree")
+GG <- read.tree("../data/IMG.tree")
 ```
 
 ## Import Taxonomy Information
 ```{r}
-LTP.tax <- read.tax("../data/LTPs123_unique.nr_v123.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
-NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
-RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
+GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
+
 ```
 
 
 # Edge Length Distribution
 ```{r, results = "hide"}
-LTP.edges <- LTP$edge.length
-NTL.edges <- NTL$edge.length
-RDP.edges <- RDP$edge.length
+GG.edges <- GG$edge.length
 
-png(filename="../figures/BranchLengths.png",
-    width = 800, height = 1600, res = 96*2)
+png(filename="../figures/GG_BranchLength.png",
+    width = 800, height = 800, res = 96*2)
 
-layout(matrix(1:3, 3, 1))
 par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
 
-hist(log10(LTP.edges), main = "Silva: Living Tree Project",
-     axes = F, xlab = "", ylab = "", xlim = c(-4, 1), col = "gray")
+hist(log10(GG.edges), main = "Green Genes: IMG Isolates",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-4, 0), ylim = c(0, 800), 
+     col = "gray")
+
 
 axis(1, at = c(-4, -3, -2, -1, 0, 1), 
      labels = expression(10^-4, 10^-3, 10^-2, 10^-1, 1, 10^1),  
      las = 1, lwd = 1.5)
 axis(2, labels = T, las = 1, lwd = 1.5)
 
-mtext("Edge Length", side = 1, cex = 1, line = 2.5)
-mtext("Frequency", side = 2, cex = 1, line = 4)
-
-hist(log10(NTL.edges), main = "Hug et al. 2016: New Tree of Life",
-     axes = F, xlab = "", ylab = "", xlim = c(-4, 1), col = "gray")
-
-axis(1, at = c(-4, -3, -2, -1, 0, 1), 
-     labels = expression(10^-4, 10^-3, 10^-2, 10^-1, 1, 10^1),  
-     las = 1, lwd = 1.5)
-axis(2, labels = T, las = 1, lwd = 1.5)
-
-mtext("Edge Length", side = 1, cex = 1, line = 2.5)
-mtext("Frequency", side = 2, cex = 1, line = 4)
-
-hist(log10(RDP.edges), main = "Ribosomal Datebase Project",
-     axes = F, xlab = "", ylab = "", xlim = c(-4, 1), col = "gray")
-
-axis(1, at = c(-4, -3, -2, -1, 0, 1), 
-     labels = expression(10^-4, 10^-3, 10^-2, 10^-1, 1, 10^1),  
-     las = 1, lwd = 1.5)
-axis(2, labels = T, las = 1, lwd = 1.5)
-
-mtext("Edge Length", side = 1, cex = 1, line = 2.5)
-mtext("Frequency", side = 2, cex = 1, line = 4)
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
 
 
 # Close Plot Device
 dev.off()
 graphics.off()
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/BranchLengths.png")
+#```{r}
+img <- readPNG("../figures/GG_BranchLength.png")
 grid.raster(img)
 ```
 
 ## Edge Length vs Support
 ```{r}
-node.tab <- data.frame(matrix(NA, LTP$Nnode, 5))
+node.tab <- data.frame(matrix(NA, GG$Nnode, 5))
 colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
-node.tab$node <- as.numeric(c(1:LTP$Nnode))
-node.tab$support <- LTP$node.label
+node.tab$node <- as.numeric(c(1:GG$Nnode))
+node.tab$support <- GG$node.label
 node.tab[1,3] <- NA
-for (i in 2:LTP$Nnode){
-  edge.up <- which(LTP$edge[,2] == length(LTP$tip.label) + i)
-  node.tab[i,3] <- LTP$edge.length[edge.up]
-  edge.down <- which(LTP$edge[,1] == length(LTP$tip.label) + i)
-  node.tab[i,4] <- LTP$edge.length[edge.down[1]]
-  node.tab[i,5] <- LTP$edge.length[edge.down[2]]
+for (i in 2:GG$Nnode){
+  edge.up <- which(GG$edge[,2] == length(GG$tip.label) + i)
+  node.tab[i,3] <- GG$edge.length[edge.up]
+  edge.down <- which(GG$edge[,1] == length(GG$tip.label) + i)
+  node.tab[i,4] <- GG$edge.length[edge.down[1]]
+  node.tab[i,5] <- GG$edge.length[edge.down[2]]
 }
 
 node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
@@ -161,7 +137,7 @@ scatterhist <- function(x, y, xlab="", ylab=""){
 ```
 
 ```{r, results = "hide"}
-png(filename="../figures/NodeSupport_LTP.png",
+png(filename="../figures/NodeSupport_GG.png",
     width = 800, height = 800, res = 96*2)
 
 # Upstream
@@ -180,98 +156,29 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 # Close Plot Device
 dev.off()
 graphics.off()
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/NodeSupport_LTP.png")
+#```{r}
+img <- readPNG("../figures/NodeSupport_GG.png")
 grid.raster(img)
 ```
 
-## Edge Length vs Support
-```{r}
-node.tab <- data.frame(matrix(NA, NTL$Nnode, 5))
-colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
-node.tab$node <- as.numeric(c(1:NTL$Nnode))
-node.tab$support <- NTL$node.label
-node.tab[1,3] <- NA
-for (i in 2:NTL$Nnode){
-  edge.up <- which(NTL$edge[,2] == length(NTL$tip.label) + i)
-  node.tab[i,3] <- NTL$edge.length[edge.up]
-  edge.down <- which(NTL$edge[,1] == length(NTL$tip.label) + i)
-  node.tab[i,4] <- NTL$edge.length[edge.down[1]]
-  node.tab[i,5] <- NTL$edge.length[edge.down[2]]
-}
-
-node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
-```
-
+## GG Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
-png(filename="../figures/NodeSupport_NTL.png",
-    width = 800, height = 800, res = 96*2)
-
-# Upstream
-scatterhist(x = log10(node.tab$edge_up), y = as.numeric(node.tab$support),
-            xlab = "Upstream Edge Length", ylab = "Node Support")
-
-# Downstream
-scatterhist(log10(node.tab$edge_down_min), as.numeric(node.tab$support),
-            xlab = "Downstream Edge Length", ylab = "Node Support")
-
-mean(as.numeric(node.tab$support), na.rm = T)
-mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -1.75]), na.rm = T)
-mean(as.numeric(node.tab$support[log10(node.tab$edge_up) > 0.75]), na.rm = T)
-mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
-
-# Close Plot Device
-dev.off()
-graphics.off()
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/NodeSupport_NTL.png")
-grid.raster(img)
-```
-
-## LTP Exploratory Tree with Domain Grouping
-```{r, results = "hide"}
-png(filename="../figures/LTP_explore.png",
+png(filename="../figures/GG_explore.png",
     width = 1600, height = 1600, res = 96*2)
 
-LTP.2 <- LTP
-LTP.tax2 <- LTP.tax[match(LTP.2$tip.label, LTP.tax$OTU), ]
-groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
-livingTree <- groupOTU(LTP.2, groupInfo, group_name = "Domain")
-levels(attributes(livingTree)$Domain) <- names(groupInfo)
-ggtree(livingTree, aes(color = Domain), layout="rectangular") + 
-  geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+GG.2 <- GG
+GG.tax2 <- GG.tax[match(GG.2$tip.label, GG.tax$OTU), ]
+groupInfo <- split(GG.2$tip.label, GG.tax2$Domain)
+GreenTree <- groupOTU(GG.2, groupInfo, group_name = "Domain")
+levels(attributes(GreenTree)$Domain) <- names(groupInfo)
+ggtree(GreenTree, aes(color = Domain), layout="rectangular") + 
+  geom_text(aes(label = node), show.legend = FALSE,
             hjust=-0.1, vjust = -0.5, size = 2) + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[2:3])) 
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clean Up
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/LTP_explore.png")
-grid.raster(img)
-```
-
-## Identify the LTP Node that seperates bacteria and archaea
-```{r, results = "hide"}
-png(filename="../figures/LTP_archaea.png",
-    width = 1600, height = 1600, res = 96*2)
-par(mar=c(1,1,1,3))
-cp <- ggtree(livingTree, aes(color = Domain), layout="rectangular") %>% ggtree::collapse(node=18228)
-cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=18, 
+  geom_point2(aes(subset=(node == 3518)), size=3, shape=18, 
                  colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) +
-  geom_text2(aes(subset=(node == 18228), label = "Archaea"), 
-             show.legend = FALSE, hjust=-0.1, size = 3) + 
-  guides(colour = guide_legend(override.aes = list(shape = NA, label = NA))) + 
   scale_color_manual(values=c(ggplotColours(n = 4)[2:3])) 
 
 # Close Plot Device
@@ -279,25 +186,25 @@ dev.off()
 graphics.off()
 
 # Clean Up
-rm(cp)
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/LTP_archaea.png")
+#```{r}
+img <- readPNG("../figures/GG_explore.png")
 grid.raster(img)
 ```
 
-## Reroot LTP Tree
+
+## Reroot GreenGenes Tree
 ```{r, results = "hide"}
-png(filename="../figures/LTP_root.png",
+png(filename="../figures/GG_root.png",
     width = 1600, height = 1600, res = 96*2)
 
-livingTree.r <- midpoint.root(livingTree)
-groupInfo <- split(LTP.2$tip.label, LTP.tax2$Domain)
-livingTree.r2 <- groupOTU(livingTree.r, groupInfo, group_name = "Domain")
-levels(attributes(livingTree.r2)$Domain) <- c("root", names(groupInfo))
-rt <- ggtree(livingTree.r2, aes(color = Domain), layout="rectangular")
-rt + geom_point2(aes(subset=(node == 11934)), size=4, shape=18, 
+GreenTree.r <- midpoint.root(GreenTree)
+groupInfo <- split(GG.2$tip.label, GG.tax2$Domain)
+GreenTree.r2 <- groupOTU(GreenTree.r, groupInfo, group_name = "Domain")
+levels(attributes(GreenTree.r2)$Domain) <- c("root", names(groupInfo))
+rt <- ggtree(GreenTree.r2, aes(color = Domain), layout="rectangular")
+rt + geom_point2(aes(subset=(node == 3518)), size=4, shape=18, 
                  colour=ggplotColours(n = 4)[1], fill = "gray80") + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
   scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
@@ -308,57 +215,61 @@ graphics.off()
 
 # Clean Up
 rm(rt)
-```
+#```
 ## Show Plot
-```{r}
+#```{r}
 img <- readPNG("../figures/LTP_root.png")
 grid.raster(img)
 ```
 
 ## Export Rooted Tree
 ```{r}
-write.tree(livingTree.r, file = "../data/LTP.rooted.tre")
-write.nexus(livingTree.r, file = "../data/LTP.rooted.nex")
+write.tree(GreenTree.r, file = "../data/GG.rooted.tre")
+write.nexus(GreenTree.r, file = "../data/GG.rooted.nex")
 ```
 
-## LTP Exploratory Tree with Cyano Grouping
+## GreenGenes Exploratory Tree with Cyano Grouping
 ```{r, results = "hide"}
-png(filename="../figures/LTP_Cyano.png",
+png(filename="../figures/GG_Cyano.png",
     width = 1600, height = 1600, res = 96*2)
 
-LTP.tax.full <- read.tax("../data/LTPs123_unique.full.taxonomy", col.tax = 2, tax.levels = 7)
-LTP.tax.rooted <- LTP.tax.full[match(livingTree.r$tip.label, LTP.tax.full$OTU), ]
-all.equal(as.factor(LTP.tax.rooted$OTU), as.factor(livingTree.r$tip.label))
+GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", col.tax = 2, tax.levels = 6)
+GG.tax.rooted <- LTP.tax[match(GreenTree.r$tip.label, GG.tax$OTU), ]
+all.equal(as.factor(GG.tax.rooted$OTU), as.factor(GreenTree.r$tip.label))
 
-LTP.cyano <- LTP.tax.rooted$Phylum
+GG.cyano <- GG.tax.rooted$Phylum
 
-for (i in 1:length(LTP.cyano)){
-  if (LTP.cyano[i] == "Cyanobacteria"){
-    LTP.cyano[i] = "Cyanobacteria"
+for (i in 1:length(GG.cyano)){
+  if (GG.cyano[i] == "Cyanobacteria/Chloroplast"){
+    GG.cyano[i] = "Cyanobacteria"
   } else {
-    if (LTP.tax.rooted$Domain[i] == "Archaea"){
-      LTP.cyano[i] = "Archaea"
+    if (GG.tax.rooted$Domain[i] == "Archaea"){
+      GG.cyano[i] = "Archaea"
     } else {
-      LTP.cyano[i] = "Other Bacteria"
+      GG.cyano[i] = "Other Bacteria"
     }
   }
 }
 
-groupInfo <- split(livingTree.r$tip.label, LTP.cyano)
+groupInfo <- split(GreenTree.r$tip.label, GG.cyano)
 
 # Only 16 Cyanos?
-length(grep("[C|c]yano*", LTP.tax.rooted$Phylum))
+length(grep("[C|c]yano*", GG.tax.rooted$Phylum))
 
-LTP.cy <- groupOTU(livingTree.r, groupInfo, group_name = "Cyano")
-levels(attributes(LTP.cy)$Cyano) <- c("Root", names(groupInfo))
+GG.cy <- groupOTU(GreenTree.r, groupInfo, group_name = "Cyano")
+levels(attributes(GG.cy)$Cyano) <- c("Root", names(groupInfo))
 
 
-LT <- ggtree(LTP.cy, aes(color = Cyano, layout="rectangular"))
+GG <- ggtree(GG.cy, aes(color = Cyano, layout="rectangular"))
 
-LT + geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+GG + geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
             hjust=-0.1, vjust = -0.5, size = 2) + 
+  geom_point2(aes(subset=(node == 4587)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[4], fill = "gray80") + 
+  geom_point2(aes(subset=(node == 2732)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)])) 
+  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)]), name="") 
 
 # Close Plot Device
 dev.off()
@@ -368,37 +279,29 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/LTP_Cyano.png")
+img <- readPNG("../figures/GG_Cyano.png")
 grid.raster(img)
 ```
 
-# Isolate Cyanobacteria and Identify the LTP Node that seperates cyanos
-```{r, results = "hide"}
-png(filename="../figures/LTP_Cyano2.png",
-    width = 1600, height = 1600, res = 96*2)
+# ID Midpoint and Cyano tips
+```{r}
+# Root
+D <- cophenetic(GreenTree.r)
+dd <- max(D)
+ii <- which(D == dd)[1]
+ii <- c(ceiling(ii/nrow(D)), ii%%nrow(D))
+if (ii[2] == 0) 
+    ii[2] <- nrow(D)
+spp <- rownames(D)[ii]
 
-viewClade(LT + #geom_tiplab() +
-            geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
-            hjust=-0.1, vjust = -0.5, size = 2) + 
-            theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-            scale_color_manual(values=c(ggplotColours(n = 4)[c(3,4,2,1)])), 
-          node=14077)
-
-LTP.tax.full[which(LTP.tax.full$OTU %in% livingTree.Cyano$tip.label), ]
-
-livingTree.Cyano <- extract.clade(livingTree.r, 14157)
-
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clean Up
-#```
-## Show Plot
-#```{r}
-img <- readPNG("../figures/LTP_Cyano2.png")
-grid.raster(img)
+# Cyano
+D <- cophenetic(extract.clade(GreenTree.r, node = 4587))
+dd <- max(D)
+ii <- which(D == dd)[1]
+ii <- c(ceiling(ii/nrow(D)), ii%%nrow(D))
+if (ii[2] == 0) 
+    ii[2] <- nrow(D)
+spp <- rownames(D)[ii]
 ```
 
 ## Make Tree Ultrametric
@@ -409,18 +312,20 @@ The most common are chronos, chronopl, chronoMPL. But I don't know how they comp
 
 The output file was `LTP.dated.tree`
 ```{r, results = "hide"}
-LTP.um <- read.tree("../data/LTP.dated.tree")
+GG.um <- read.tree("../data/GG.dated.tree")
 
-png(filename="../figures/LTP_dated.png",
+png(filename="../figures/GG_dated.png",
     width = 1600, height = 1600, res = 96*2)
 
-livingTree.um <- groupOTU(LTP.um, groupInfo, group_name = "Domain")
-levels(attributes(livingTree.um)$Domain) <- c("root", names(groupInfo))
-um <- ggtree(livingTree.um, aes(color = Domain), layout="rectangular")
-um + geom_point2(aes(subset=(node == 11934)), size=4, shape=18, 
+GreenTree.um <- groupOTU(GG.um, groupInfo, group_name = "Domain")
+levels(attributes(GreenTree.um)$Domain) <- c("root", names(groupInfo))
+um <- ggtree(GreenTree.um, aes(color = Domain), layout="rectangular")
+um + geom_point2(aes(subset=(node == 4587)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[4], fill = "gray80") + 
+  geom_point2(aes(subset=(node == 2732)), size=4, shape=18, 
                  colour=ggplotColours(n = 4)[1], fill = "gray80") + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
+  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)]), name="") 
 
 # Close Plot Device
 dev.off()
@@ -428,20 +333,20 @@ graphics.off()
 
 # Clear Up
 rm(um)
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/LTP_dated.png")
+#```{r}
+img <- readPNG("../figures/GG_dated.png")
 grid.raster(img)
 ```
 
 ## Branch Lenght Comparision
 ```{r, results = "hide"}
-png(filename="../figures/Branch_Comparision.png",
+png(filename="../figures/GG_Branch_Comparision.png",
     width = 800, height = 800, res = 96*2)
 
-reg <- livingTree.r2$edge.length
-um <- livingTree.um$edge.length
+reg <- GreenTree.r2$edge.length
+um <- GreenTree.um$edge.length
 
 # Are nodes the same?
 sum(livingTree.r2$node.label != livingTree.um$node.label)
@@ -456,7 +361,7 @@ ttest(mod1, 2, 1)
 
 par(mar = c(6,6,1,1) + 0.1, oma = c(0.5,0.5,0.5,0.5))
 plot(reg.l, um.l, 
-     xlim = c(0, 3.5), ylim = c(-4, 4),
+     xlim = c(0, 3.5), ylim = c(0, 4),
      axes=F, xlab = "", ylab = "")
 
 # abline(mod1, from = -2.5, to = 1.5, lty = 2, lwd = 2, col = "red")
@@ -485,10 +390,10 @@ dev.off()
 graphics.off()
 
 rm(mod1)
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/Branch_Comparision.png")
+#```{r}
+img <- readPNG("../figures/GG_Branch_Comparision.png")
 grid.raster(img)
 ```
 
@@ -506,8 +411,8 @@ if (run.all == TRUE){
   colnames(um.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
   um.thres$threshold <- 10^c(seq(-3, 2, length.out = 100))
   
-  phy1 <- livingTree.r2
-  phy2 <- livingTree.um
+  phy1 <- GreenTree.r2
+  phy2 <- GreenTree.um
   
   for (i in 1:dim(tree.thres)[1]){
     phy.grained <- di2multi2(phy1, tree.thres[i,1])
@@ -533,27 +438,27 @@ if (run.all == TRUE){
 
 ```{r, results = "hide"}
 if (run.all == TRUE){
-  png(filename="../figures/Tree_Topology.png",
+  png(filename="../figures/GG_Tree_Topology.png",
       width = 1600, height = 1600, res = 96*2)
   
   layout(matrix(1:6, 3))
   par(mar = c(2,4,0.5,0.5), oma = c(3,1.5,3.5,1.5))
   plot(tree.thres$nodes ~ log10(tree.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2,
-       xaxt = "n", ylim = c(0,15000))
+       xaxt = "n", ylim = c(0,2000))
   axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
   mtext("# Nodes", side = 2, line = 2.5)
   mtext("Original Tree", side = 3, line = 1, outer = F)
   box(lwd = 2)
   plot(tree.thres$polytomies ~ log10(tree.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2, 
-       xaxt = "n", ylim = c(0,2000))
+       xaxt = "n", ylim = c(0,300))
   axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
   mtext("# Polytomies", side = 2, line = 2.5)
   box(lwd = 2)
   plot(log10(tree.thres$avg.polytomy) ~ log10(tree.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2, 
-       xaxt = "n", ylim = c(0,2.5))
+       xaxt = "n", ylim = c(0,4))
   axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
   mtext("Threshold (substitutions)", side =1, line = 2.5, cex = 1)
   mtext("Average Polytomy Size", side = 2, line = 2.5)
@@ -561,7 +466,7 @@ if (run.all == TRUE){
   
   plot(um.thres$nodes ~ log10(um.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2,
-       xaxt = "n", ylim = c(0,15000), xlim = c(-3,2))
+       xaxt = "n", ylim = c(0,3000), xlim = c(-3,2))
   axis(side = 1, at = seq(-3,2,1), 
        labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
   mtext("# Nodes", side = 2, line = 2.5)
@@ -569,14 +474,14 @@ if (run.all == TRUE){
   box(lwd = 2)
   plot(um.thres$polytomies ~ log10(um.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2,
-       xaxt = "n", ylim = c(0,1500), xlim = c(-3,2))
+       xaxt = "n", ylim = c(0,300), xlim = c(-3,2))
   axis(side = 1, at = seq(-3,2,1), 
        labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
   mtext("# Polytomies", side = 2, line = 2.5)
   box(lwd = 2)
   plot(um.thres$avg.polytomy ~ log10(um.thres$threshold),
        xlab = "", ylab = "", type = "l", lwd = 2,
-       xaxt = "n", ylim = c(0,50), xlim = c(-3,2))
+       xaxt = "n", ylim = c(0,15), xlim = c(-3,2))
   axis(side = 1, at = seq(-3,2,1), 
        labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
   mtext("Threshold (Ma)", side =1, line = 2.5, cex = 1)
@@ -590,16 +495,16 @@ if (run.all == TRUE){
   
   # Clean Up
 }
-```
+#```
 ## Show Plot
-```{r}
-img <- readPNG("../figures/Tree_Topology.png")
+#```{r}
+img <- readPNG("../figures/GG_Tree_Topology.png")
 grid.raster(img)
 ```
 
 ## Calculate Local Minimums from Edge Lengths and Maximum from Polytomies
 ```{r}
-den.dis <- density(log10(LTP.edges))
+den.dis <- density(log10(GG.edges))
 mins <- peaks(den.dis$x, den.dis$y, mode = "min")
 maxs <- peaks(den.dis$x, den.dis$y, mode = "max")
 ```
@@ -609,11 +514,11 @@ maxs <- peaks(den.dis$x, den.dis$y, mode = "max")
 if (run.all == TRUE){
   time.thres <- data.frame(matrix(NA, 100, 4))
   colnames(time.thres) <- c("threshold", "Nnodes", "Npolytomies", "avg.polytomy")
-  time.thres$threshold <- 10^c(seq(-3, 0, length.out = 100))
+  time.thres$threshold <- 10^c(seq(-3, -1, length.out = 100))
   
   thres.info <- vector(mode = "list", length = 100)
   
-  phy1 <- livingTree.r2
+  phy1 <- GreenTree.r2
   
   for (i in 1:dim(time.thres)[1]){
     phy.grained <- di2multi2(phy1, time.thres[i,1])
@@ -693,14 +598,14 @@ rm(test.tree)
 # Polytomy Movie
 ```{r}
 if (run.all == TRUE){
-  system("rm ../figures/movie/*.png")
+  system("rm ../figures/movie/G*.png")
   
-  threshold <- 10^c(seq(-2.5, -1, length.out = 50))
+  threshold <- 10^c(seq(-3, -1, length.out = 50))
   
   for (i in threshold){
     thres = i
-    outname <- paste("../figures/movie/T", round(thres, 4), ".png", sep = "")
-    test.phy <- di2multi3(phy1 = livingTree.r2, phy2 = livingTree.um, 
+    outname <- paste("../figures/movie/G", round(thres, 4), ".png", sep = "")
+    test.phy <- di2multi3(phy1 = GreenTree.r2, phy2 = GreenTree.um, 
                           tol = thres)
     poly.node <- test.phy$multi.new
     test.phy <- node.age(test.phy)
@@ -710,9 +615,9 @@ if (run.all == TRUE){
     test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular") 
     test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
                   colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-      theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) + 
-      scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
-                         labels = c("polytomy", "Archaea", "Bacteria")) + 
+      theme_tree(legend.position="top", legend.key = element_rect(colour = NA)) + 
+      scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1, 2, 4, 3)]), 
+             labels = c("polytomy", "Archaea", "Cyanobacteria", "Other Bacteria")) + 
       annotate("text", hjust = 0, x = max(test.phy$ages) * 0.05, 
                y = length(test.phy$tip.label) * 0.95, 
                label = paste("Threshold =", round(thres, 4)))
@@ -722,16 +627,15 @@ if (run.all == TRUE){
   
   rm(test.tree)
   
-  system("convert -loop 10 -delay 100 
-         '../figures/movie/T*.png' '../figures/movie/Test.gif'")
+  system("convert -loop 10 -delay 100 '../figures/movie/*.png' '../figures/movie/GreenGenes.gif'")
 }
 ```
 
 # Test Geological Window
 ```{r}
-thres = 0.01
+thres = 0.005
 
-test.phy <- di2multi3(phy1 = livingTree.r2, phy2 = livingTree.um, 
+test.phy <- di2multi3(phy1 = GreenTree.r2, phy2 = GreenTree.um, 
                         tol = thres)
 poly.node <- test.phy$multi.new
 test.phy <- node.age(test.phy)
@@ -745,9 +649,9 @@ test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular")
 test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, 
                         shape=18, colour=ggplotColours(n = 4)[1], 
                         fill = "gray80") + 
-  theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
-                     labels = c("polytomy", "Archaea", "Bacteria")) + 
+  theme_tree(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1,2,4,3)]), 
+         labels = c("polytomy", "Archaea", "Cyanobacteria", "Other Bacteria")) + 
   annotate("text", hjust = 0, x = max(test.phy$ages) * 0.05, 
            y = length(test.phy$tip.label) * 0.95, 
            label = paste("Threshold =", round(thres, 4))) + 
