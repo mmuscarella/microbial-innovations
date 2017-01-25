@@ -7,7 +7,7 @@ analyses/.Rhistory
 SeqChecks.ipynb
 test.ipynb
 .DS_Store
-figures/movies/*.png
+figures/movie/*.png
 figures/movie/T0.0032.png
 figures/movie/T0.0034.png
 figures/movie/T0.0036.png
