@@ -39,21 +39,21 @@
 				Gamma(20) LogLk = -1757170.448 alpha = 0.295 rescaling lengths by 4.795   
 				Total time: 1261.53 seconds Unique: 9501/9752 Bad splits: 79/9498 Worst delta-LogLk 8.486`
 
-			classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax, cutoff=80, probs=T)
+			`classify.seqs(fasta=LTPs123_unique.fasta, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax, cutoff=80, probs=T)
 
 			classify.seqs(fasta=LTPs123_unique.fasta, template=silva.nr_v123.align, taxonomy=silva.nr_v123.tax, cutoff=50, probs=F)
 
 			classify.seqs(fasta=nmicrobiol201648_s7.txt, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
 
 
-			classify.seqs(fasta=rdp_download_9752seqs.fa, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)
+			classify.seqs(fasta=rdp_download_9752seqs.fa, template=trainset14_032015.pds.fasta, taxonomy=trainset14_032015.pds.tax)`
 
 	 - treePL being used to make trees ultrametric
 
 
 	 		+ treePL requires the number of sites. I'm going to assume this would be the number of bases. So, I need a python script that determines the number of bases in each record. This should be the same because these are alignments, but we will see.
 
-		-
+			-
 
 		+ We have had to make changes to the treePL code. The original code ignores branches that are under a set threshold. However, we do not want to ignore the distance represented by these brances. So we rewrote the code to add the distance of branches which are removed to the downstream branches at the given node.
 
