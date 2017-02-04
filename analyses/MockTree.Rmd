@@ -28,6 +28,7 @@ library("diagram")
 library("adephylo")
 require("grid")
 require("png")
+library("geiger")
 ```
 
 
@@ -754,11 +755,186 @@ help("tree.bisse")
 
 # Yule Tree
 ```{r}
-yule1 <-sim.bdtree(b = 0.2, d = 0, stop = "taxa", n = 100)
+# Parameters
+birth = 0.2; a = 0.95; b = 0.98
+
+# Generate Yule Tree
+y.tree <-sim.bdtree(b = birth, d = 0, stop = "taxa", n = 100)
+y.tree$tip.label <- paste("OTU", sprintf("%05d", seq(1:100)), sep = "")
+
+# Save a few values
+Ntips <- length(y.tree$tip.label)
+Nedges <- y.tree$Nnode + Ntips
+
+# Standardize Branch Lengths
+tip.dist <- round(dist.nodes(y.tree)[1:Ntips, Ntips + 1], 5)
+if (var(tip.dist) != 0){
+  stop("Tree may not be ultrametric")
+}
+std.fac <- mean(tip.dist)
+y.tree$edge.length <- (y.tree$edge.length / std.fac) * 100
+
+# Generate Traits Matrix
+traits <- matrix(NA, nrow = Nedges, ncol = 3)
+colnames(traits) <- c("Parent", "Offspring", "Trait")
+traits <- as.data.frame(traits)
+
+# Define Trait States
+traitNames <- c("Off","On")
+
+# Define Root Ancestor Traits
+traits[1,] <- c("None", "101", "Off")
+
+# Run Trait Model Given the Tree
+for (i in 1:(Nedges - 1)){
+  traits[i + 1, 1:2] <- y.tree$edge[i, ]
+  t <- y.tree$edge.length[i]
+  p <- y.tree$edge[i,1]
+  o <- y.tree$edge[i,2]
+  index.p <- which(traits$Offspring == as.character(p))
+  init <- traits$Trait[index.p]
+  if (init == "Off"){u <- c(1,0)} else {
+    if (init == "On"){u <- c(0,1)}}
+  M <- MCtrait(t = t , a = a, b = b)
+  prob <- round(u %*% M$M, 4)
+  s <- sample(traitNames, size = 1, prob = prob)
+  traits[i + 1, 1] <- p   # Parent
+  traits[i + 1, 2] <- o   # Offspring
+  traits[i + 1, 3] <- s   # Trait State
+}
+
+node.traits <- traits[which(as.numeric(traits$Offspring) > Ntips), ]
+node.traits2 <- node.traits[order(as.numeric(node.traits$Offspring)), ]
+
+tip.traits <- traits[which(as.numeric(traits$Offspring) <= Ntips), ]
+tip.traits2 <- tip.traits[order(as.numeric(tip.traits$Offspring)), ]
+
+n.col <- node.traits2$Trait
+n.col <- gsub("On", "red", gsub("Off", "gray", n.col))
+
+t.col <- tip.traits2$Trait
+t.col <- gsub("On", "red", gsub("Off", "gray", t.col))
+
+Obs.Traits <- data.frame(OTU = y.tree$tip.label, 
+                                Traits = tip.traits$Trait)
+
+# Trait Evolution
+plot(y.tree, "c", FALSE, no.margin = TRUE, label.offset = 4, cex = 0.3)
+mtext("Trait Simulation", side = 3, cex = 1, outer = F)
+nodelabels(node.traits2$Offspring, cex = 0.25, frame = "circle", bg = n.col)
+tiplabels(pch = 22, bg = t.col, adj = c(3, 0.5))
+```
+
+# Trait Description
+```{r}
+traits$P.trait <- NA
+traits$P.trait[1] <- "Off"
+for (i in 2:dim(traits)[1]){
+  par.id <- which(traits$Offspring == traits$Parent[i])
+  traits$P.trait[i] <- traits$Trait[par.id]
+}
+trait.evol <- traits[which(traits$P.trait == "Off" & traits$Trait == "On"), ]
+trait.evol$distance <- dist.nodes(y.tree)[trait.evol$Offspring, Ntips + 1]
+
+min.evol <- min(trait.evol$distance)
 
 
 
 ```
+
+```{r}
+# Trait Predictions with ASR
+
+# Table of Observed Traits
+x <- Obs.Traits$Traits; names(x) <- Obs.Traits$OTU
+
+# Use ACE function for Baysian Posterior Probabilities
+ASR <- ace(x, y.tree, type = "d", model = "ARD", CI = T,
+           marginal = T, ip = c(1, 0))
+
+# Use Simmap Function to run Markov Chain Monte Carlo for Trait Statse on Edges
+# MCMC For Time in each state on each edge
+ASR.2 <- make.simmap(y.tree, x, Q = "mcmc", model = "ARD", pi = c(1,0))
+edge <- ASR.2$mapped.edge / tree$edge.length
+pred <- c("Off", names(unlist(lapply(ASR.2$maps, tail, n = 1L))))
+
+
+# Create Trait Prediction Data Frame
+pred.traits <- data.frame(Parent = traits$Parent, Offspring = traits$Offspring)
+pred.traits$Trait.Pred <- NA
+pred.traits$Trait.Pred[1] <- "Off"
+
+for (i in 2:dim(pred.traits)[1]){
+  po.p <- strsplit(row.names(edge), ",")[[i - 1]]
+  po.o <- as.vector(unlist(pred.traits[i + 1, 1:2]), mode = "character")
+  if(all.equal(po.p, po.o) == FALSE){
+    stop("predicted and observed trait dataframes do not match")
+  }
+  pred.traits$Trait.Pred[i] <- pred[i-1]
+}
+
+pred.node <- c("Off", names(unlist(lapply(ASR.2$maps, tail, n = 1L)))[1:98])
+pred.node <- gsub("On", "red", gsub("Off", "gray", pred.node))
+```
+
+
+# Define Traits
+x.2 <- as.numeric(gsub("Off", 0, gsub("On", 1, x)))
+pred.traits <- data.frame(OTU = names(x), Traits1 = x.2, Traits2 = rev(x.2))                     
+# Use ConsenTrait Function for Trait Conservation  
+conserve <- ConsenTrait(tree, traits = traits, cutoff = 0.90)
+nodes <- conserve$node[which(conserve$trait == 1)]
+
+
+
+```{r}
+
+layout(matrix(c(1:3), 1, 3))
+par(mar = c(0.5, 0.5, 0.5, 0.5), oma = c(1, 1, 3, 1))
+
+
+# Trait Evolution
+plot(y.tree, "c", FALSE, no.margin = TRUE, label.offset = 4, cex = 0.3)
+mtext("Trait Simulation", side = 3, cex = 1, outer = F)
+nodelabels(node.traits2$Offspring, cex = 0.25, frame = "circle", bg = n.col)
+tiplabels(pch = 22, bg = t.col, adj = c(3, 0.5))
+
+# ASR
+# Limit Edges
+edge2 <- edge[(grep("*,[0-9][0-9][0-9]", rownames(edge))), ]
+plot(y.tree, "c", FALSE, no.margin = TRUE, label.offset = 4, cex = 0.3)
+mtext("Ancestral State Reconstruction", side = 3, cex = 1, outer = F)
+tiplabels(pch = 22, bg = t.col, adj = c(3, 0.5))
+#edgelabels(edge = c(grep("*,[0-9][0-9][0-9]", rownames(Sim1a$edge))), 
+#           pie = edge2, cex = 0.75, piecol = c("gray", "red"))
+nodelabels(node.traits2$Offspring, cex = 0.25, frame = "circle", bg = pred.node)
+
+# Trait Conservation
+plot(tree, "c", FALSE, no.margin = TRUE, label.offset = 4, cex = 0.3)
+mtext("Trait Conservation", side = 3, cex = 1, outer = F)
+tiplabels(pch = 22, bg = t.col, adj = c(3, 0.5))
+nodelabels(node = c(nodes), pch = 21, bg = "red", cex = 2.5)
+nodelabels(node = c(nodes), text = c(nodes), cex = 0.5, frame = "none")
+
+# Trait Evolution Off -> On
+
+
+# Sim Traits Off -> On
+trait.pred <- node.traits2
+rownames(trait.pred) <- seq(1:dim(trait.pred)[1])
+trait.pred$P.trait <- NA
+trait.pred$P.trait[1] <- "Off"
+for (i in 2:dim(trait.pred)[1]){
+  par.id <- which(trait.pred$Offspring == trait.pred$Parent[i])
+  trait.pred$P.trait[i] <- trait.pred$Trait[par.id]
+}
+pred.evols <- trait.pred[which(trait.pred$P.trait == "Off" & trait.pred$Trait == "On"), ]
+pred.evols$distance <- dist.nodes(tree)[evols$Offspring, length(tree$tip.label) + 1]
+
+
+```
+
+
 
 help
 
