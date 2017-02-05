@@ -1003,8 +1003,9 @@ Obs.Traits <- data.frame(OTU = y.tree$tip.label,
 x <- Obs.Traits$Traits; names(x) <- Obs.Traits$OTU
 
 # Use ACE function for Baysian Posterior Probabilities
-ASR <- ace(x, y.tree, type = "d", model = "ARD", CI = T)
+ASR <- ace(x, y.tree, type = "d", model = "ARD", CI = TRUE, marginal = TRUE)
 
+ASR.ll <- ASR$loglik
 H <- matrix(c(-ASR$rates[2], ASR$rates[2], 
               ASR$rates[1], -ASR$rates[1]), nrow = 2, ncol = 2, byrow = T)
 e <- tree$edge
