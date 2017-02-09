@@ -30,8 +30,8 @@ fitMC <- function(x, phy, ip = 0.5){
   rate[rate == 0] <- np + 1
   
   # Define Likelihood Output
-  liks <- matrix(0, nb.tip + nb.node, nl)
-  TIPS <- 1:nb.tip
+  liks <- matrix(0, nb.tips + nb.node, nl)
+  TIPS <- 1:nb.tips
   liks[cbind(TIPS, x)] <- 1
   
   phy <- reorder(phy, "postorder")
@@ -45,7 +45,7 @@ fitMC <- function(x, phy, ip = 0.5){
   dev <- function(p){
     if (any(is.nan(p)) || any(is.infinite(p)))
       return(1e+50)
-    comp <- numeric(nb.tip + nb.node)
+    comp <- numeric(nb.tips + nb.node)
     H[] <- c(p, 0)[rate]
     diag(H) <- -rowSums(H)
     for (i in seq(from = 1, by = 2, length.out = nb.node)){
@@ -119,14 +119,14 @@ fitMC2 <- function(phy, x, pp = c(0.9, 0.1),
   H <- matrix(0, nl, nl)
   
   # Define Likelihood Output (node -> tip)
-  liks <- matrix(0, nb.tip + nb.node, nl)
+  liks <- matrix(0, nb.tips + nb.node, nl)
   TIPS <- 1:nb.tips
   liks[cbind(TIPS, x)] <- 1
 
   pw <- reorder(phy, "pruningwise")
   
   lik <- function(pp, pi, post = FALSE){
-    comp <- vector(length = nb.node + nb.tip, mode = "numeric")
+    comp <- vector(length = nb.node + nb.tips, mode = "numeric")
     H[] <- c(pp, 0)[rate]
     diag(H) <- -rowSums(H)
     parents <- unique(pw$edge[, 1])

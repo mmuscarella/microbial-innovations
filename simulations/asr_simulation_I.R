@@ -14,6 +14,13 @@
 #
 ################################################################################
 
+# Load Dependencies
+library("ape")
+library("geiger")
+library("expm")
+library("MASS")
+
+# Load Source Functions
 source("../bin/TreeSimulationFxns.R")
 source("../bin/fitMC.R")
 
