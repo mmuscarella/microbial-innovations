@@ -745,14 +745,6 @@ nodelabels(node = c(Sim$nodes), text = c(Sim$nodes), cex = 0.5, frame = "none")
 ```
 
 
-
-```{r}
-
-help("tree.bisse")
-
-
-```
-
 # Yule Tree
 ```{r}
 # Parameters
