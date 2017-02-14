@@ -10,7 +10,7 @@ output:
   fig_caption: true
 ---
 
-## Initial Setup
+# Initial Setup
 ```{r}
 # Clear Environment and Set Working Directory
 rm(list=ls())
@@ -54,6 +54,7 @@ opar <- par(no.readonly = TRUE)  # Saves plot defaults
 run.all <- FALSE
 ```
 
+# Import Files
 ## Import Tree Files
 ```{r}
 LTP <- read.tree("../data/LTPs123.tree")
@@ -68,8 +69,8 @@ NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "r
 RDP.tax <- read.tax("../data/rdp_download_9752seqs.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
 ```
 
-
-# Edge Length Distribution
+# Edge Length
+## Edge Length Distribution
 ```{r, results = "hide"}
 LTP.edges <- LTP$edge.length
 NTL.edges <- NTL$edge.length
@@ -119,13 +120,14 @@ mtext("Frequency", side = 2, cex = 1, line = 4)
 dev.off()
 graphics.off()
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/BranchLengths.png")
 grid.raster(img)
 ```
 
-## Edge Length vs Support
+## LTP Edge Length vs Support
 ```{r}
 node.tab <- data.frame(matrix(NA, LTP$Nnode, 5))
 colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
@@ -160,6 +162,7 @@ scatterhist <- function(x, y, xlab="", ylab=""){
 }
 ```
 
+## LTP Node Support
 ```{r, results = "hide"}
 png(filename="../figures/NodeSupport_LTP.png",
     width = 800, height = 800, res = 96*2)
@@ -181,13 +184,14 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 dev.off()
 graphics.off()
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/NodeSupport_LTP.png")
 grid.raster(img)
 ```
 
-## Edge Length vs Support
+## NTL Edge Length vs Support
 ```{r}
 node.tab <- data.frame(matrix(NA, NTL$Nnode, 5))
 colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
@@ -205,6 +209,7 @@ for (i in 2:NTL$Nnode){
 node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
 ```
 
+## NTL Node Support
 ```{r, results = "hide"}
 png(filename="../figures/NodeSupport_NTL.png",
     width = 800, height = 800, res = 96*2)
@@ -226,13 +231,15 @@ mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
 dev.off()
 graphics.off()
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/NodeSupport_NTL.png")
 grid.raster(img)
 ```
 
-## LTP Exploratory Tree with Domain Grouping
+# LTP Exploration
+## Domain Grouping
 ```{r, results = "hide"}
 png(filename="../figures/LTP_explore.png",
     width = 1600, height = 1600, res = 96*2)
@@ -254,13 +261,14 @@ graphics.off()
 
 # Clean Up
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/LTP_explore.png")
 grid.raster(img)
 ```
 
-## Identify the LTP Node that seperates bacteria and archaea
+## Bacteria vs Archaea Node
 ```{r, results = "hide"}
 png(filename="../figures/LTP_archaea.png",
     width = 1600, height = 1600, res = 96*2)
@@ -281,13 +289,14 @@ graphics.off()
 # Clean Up
 rm(cp)
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/LTP_archaea.png")
 grid.raster(img)
 ```
 
-## Reroot LTP Tree
+## Rerooting Tree
 ```{r, results = "hide"}
 png(filename="../figures/LTP_root.png",
     width = 1600, height = 1600, res = 96*2)
@@ -309,7 +318,8 @@ graphics.off()
 # Clean Up
 rm(rt)
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/LTP_root.png")
 grid.raster(img)
@@ -321,7 +331,7 @@ write.tree(livingTree.r, file = "../data/LTP.rooted.tre")
 write.nexus(livingTree.r, file = "../data/LTP.rooted.nex")
 ```
 
-## LTP Exploratory Tree with Cyano Grouping
+## Cyanobacterial Grouping
 ```{r, results = "hide"}
 png(filename="../figures/LTP_Cyano.png",
     width = 1600, height = 1600, res = 96*2)
@@ -363,16 +373,15 @@ LT + geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
 # Close Plot Device
 dev.off()
 graphics.off()
+```
 
-# Clean Up
-#```
-## Show Plot
-#```{r}
+### Show Plot
+```{r}
 img <- readPNG("../figures/LTP_Cyano.png")
 grid.raster(img)
 ```
 
-# Isolate Cyanobacteria and Identify the LTP Node that seperates cyanos
+## Isolate Cyanobacteria: Fine Scale
 ```{r, results = "hide"}
 png(filename="../figures/LTP_Cyano2.png",
     width = 1600, height = 1600, res = 96*2)
@@ -392,11 +401,10 @@ livingTree.Cyano <- extract.clade(livingTree.r, 14157)
 # Close Plot Device
 dev.off()
 graphics.off()
+```
 
-# Clean Up
-#```
-## Show Plot
-#```{r}
+### Show Plot
+```{r}
 img <- readPNG("../figures/LTP_Cyano2.png")
 grid.raster(img)
 ```
@@ -429,13 +437,14 @@ graphics.off()
 # Clear Up
 rm(um)
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/LTP_dated.png")
 grid.raster(img)
 ```
 
-## Branch Lenght Comparision
+## Branch Length Comparision
 ```{r, results = "hide"}
 png(filename="../figures/Branch_Comparision.png",
     width = 800, height = 800, res = 96*2)
@@ -486,16 +495,15 @@ graphics.off()
 
 rm(mod1)
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/Branch_Comparision.png")
 grid.raster(img)
 ```
 
-## Phylogeny Topological Features
+## Phylogenetic Topological Features
 ```{r}
-# This takes awhile, so you can turn it off
-
 if (run.all == TRUE){
   tree.thres <- data.frame(matrix(NA, 100, 5))
   colnames(tree.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
@@ -530,6 +538,7 @@ if (run.all == TRUE){
   }
 }
 ```
+
 
 ```{r, results = "hide"}
 if (run.all == TRUE){
@@ -587,11 +596,10 @@ if (run.all == TRUE){
   # Close Plot Device
   dev.off()
   graphics.off()
-  
-  # Clean Up
-}
+  }
 ```
-## Show Plot
+
+### Show Plot
 ```{r}
 img <- readPNG("../figures/Tree_Topology.png")
 grid.raster(img)
@@ -650,8 +658,7 @@ if (run.all == TRUE){
 
 ```
 
-
-# Identify polytomies in gene tree and plot in the ultrametric tree
+## Identify polytomies in gene tree and plot in the ultrametric tree
 ```{r}
 # Trees
 str(livingTree.r2)
@@ -723,7 +730,8 @@ if (run.all == TRUE){
   rm(test.tree)
   
   system("convert -loop 10 -delay 100 
-         '../figures/movie/T*.png' '../figures/movie/Test.gif'")
+         '../figures/movie/T*.png' '../figures/movie/LTP.gif'")
+  system("rm ../figures/movie/*.png")
 }
 ```
 
@@ -1282,6 +1290,5 @@ length(NTL.3$tip.label)
 
 source("../bin/ConsenTrait.R")
 ConsenTrait(NTL.3, NTLtraits[, 1:5], 0.9, "../data/ConsenTrait.test.txt")
-
 
 ```
