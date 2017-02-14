@@ -337,8 +337,8 @@ TraitEvol.sim3 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
 }
 
 # Calculate the Posterior Likelihoods and Save Output
-TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100
-                          init.parms = c(0.9, 0.1), prior = c(0.99, 0.01)){
+TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
+                          init.parms = c(0.5, 0.5), prior = c(0.99, 0.01)){
   SimFun <- function(birth, a, b, init.parms, prior){
 
     # Run Tree and Trait Simulation
