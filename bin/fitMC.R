@@ -1,3 +1,16 @@
+################################################################################
+#
+# fitMC Function for Ancestral State Reconstruction
+#
+# Written by: Mario Muscarella
+#
+# Last Update: 20170213
+#
+# Goals:
+#       1. 
+#
+################################################################################
+
 fitMC <- function(x, phy, ip = 0.5){
 
   # Test
@@ -78,7 +91,7 @@ fitMC <- function(x, phy, ip = 0.5){
   return(out)
 }
 
-fitMC2 <- function(phy, x, pp = c(0.9, 0.1),
+fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
                    pi = c(0.99, 0.01), post = FALSE){
 
   # Test
@@ -152,7 +165,7 @@ fitMC2 <- function(phy, x, pp = c(0.9, 0.1),
       return(list(LogL = LogL, liks = liks[-TIPS,]))
     }
   }
-  fit <- optim(rep(pp, length.out = nl), function(pp) lik(pp, pi = pi),
+  fit <- optim(pp, function(pp) lik(pp, pi = pi),
                method = "L-BFGS-B",
                lower = rep(min.h, nl), upper = rep(max.h, nl))
   lik.out <- lik(pp = fit$par, pi = pi, post = TRUE)
