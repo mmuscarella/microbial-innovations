@@ -167,7 +167,7 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
   }
   fit <- optim(pp, function(pp) lik(pp, pi = pi),
                method = "L-BFGS-B",
-               lower = rep(min.h, nl), upper = rep(max.h, nl))
+               lower = rep(0, nl), upper = rep(max.h, nl))
   lik.out <- lik(pp = fit$par, pi = pi, post = TRUE)
 
   if (post != TRUE){
@@ -177,6 +177,7 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
   }
 }
 
+# Fit Function from phytools
 fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
   if (hasArg(output.liks))
     output.liks <- list(...)$output.liks
