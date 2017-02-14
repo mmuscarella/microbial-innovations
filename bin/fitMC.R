@@ -91,8 +91,8 @@ fitMC <- function(x, phy, ip = 0.5){
   return(out)
 }
 
-fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
-                   pi = c(0.99, 0.01), post = FALSE){
+fitMC2 <- function(phy, x, init.parms = c(0.5, 0.5),
+                   prior = c(0.99, 0.01), posterior = FALSE){
 
   # Test
   #sim <- TT.sim(birth = 0.2, a = 0.90, b = 0.90, tips = 100)
@@ -102,14 +102,18 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
   # Box Optimization Parameters
   min.h <- 1e-2
   max.h <- 1e2
-  post <- post
+  
+  # Define Parametesr
+  init.parms <- init.parms
+  prior <- prior
+  posterior <- posterior
 
   # Define Tree Features
   nb.tips <- length(phy$tip.label)
   nb.node <- phy$Nnode
 
   # Traits as Factors
-  #x <- x[phy$tip.label]
+  x <- x[phy$tip.label]
   x <- factor(x)
   nl <- nlevels(x)
   lvls <- levels(x)
@@ -126,7 +130,7 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
   rate[rate == 0] <- np + 1
 
   # Define apriori rates
-  pi <- pi/sum(pi)
+  prior <- prior/sum(prior)
 
   # Define H Matrix Output
   H <- matrix(0, nl, nl)
@@ -138,9 +142,11 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
 
   pw <- reorder(phy, "pruningwise")
 
-  lik <- function(pp, pi, post = FALSE){
+  lik <- function(init.parms, prior, posterior = FALSE){
+    if (any(is.nan(init.parms)) || any(is.infinite(init.parms)))
+      return(max.h)
     comp <- vector(length = nb.node + nb.tips, mode = "numeric")
-    H[] <- c(pp, 0)[rate]
+    H[] <- c(init.parms, 0)[rate]
     diag(H) <- -rowSums(H)
     parents <- unique(pw$edge[, 1])
     root <- min(parents)
@@ -153,24 +159,27 @@ fitMC2 <- function(phy, x, pp = c(0.5, 0.5),
       for (j in 1:length(v)){
         v[[j]] <- expm(H * el[j]) %*% liks[desc[j], ]}
       vv <- if(anc == root){
-        Reduce("*", v)[, 1] * pi
+        Reduce("*", v)[, 1] * prior
       } else {Reduce("*", v)[, 1]}
       comp[anc] <- sum(vv)
       liks[anc, ] <- vv/comp[anc]
     }
     LogL <- -sum(log(comp[1:nb.node + nb.tips]))
-    if (post != TRUE){
+    if (posterior != TRUE){
       return(LogL)
     } else {
       return(list(LogL = LogL, liks = liks[-TIPS,]))
     }
   }
-  fit <- optim(pp, function(pp) lik(pp, pi = pi),
+  fit <- optim(init.parms, function(init.parms) lik(init.parms, prior = prior),
                method = "L-BFGS-B",
-               lower = rep(0, nl), upper = rep(max.h, nl))
-  lik.out <- lik(pp = fit$par, pi = pi, post = TRUE)
+               lower = rep(min.h, nl), upper = rep(max.h, nl))
+  if (fit$convergence != 0){
+    stop("Error in optim function")
+  }
+  lik.out <- lik(init.parms = fit$par, prior = prior, posterior = TRUE)
 
-  if (post != TRUE){
+  if (posterior != TRUE){
     return(fit)
   } else {
     return(list(fit = fit, liks = lik.out))
