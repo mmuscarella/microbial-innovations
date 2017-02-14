@@ -1,10 +1,23 @@
-# ASR Method Comparisons
+################################################################################
+# 
+# Ancestral State Reconstruction (ASR) Method Comparisons
+#
+# Written by: Mario Muscarella
+#
+# Last Update: 20170213
+#
+# Goals:
+#       1. Compare Custom ASR Function to Others
+#
+################################################################################
 
+# Simulate Tree and Traits: Yule Tree and Markov Chain Trait Evolution
 a <- 0.58
 b <- 0.90
-sim <- TT.sim(birth = 0.2, a = a, b = b, tips = 100)
 Hx <- ((a - 1)/(a + b - 2)) * log(a + b - 1)
 Hy <- ((b - 1)/(a + b - 2)) * log(a + b - 1)
+
+sim <- TT.sim(birth = 0.2, a = a, b = b, tips = 100)
 phy <- sim$tree
 x <- sim$traits
 
