@@ -344,11 +344,11 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
     # Run Tree and Trait Simulation
     temp <- TraitEvol2(birth, a, b)
     tree <- temp$tree
-    traits <- temp$traits
-    rownames(traits) <- traits$OTU
+    traits <- temp$traits$Traits
+    names(traits) <- temp$traits$OTU
 
     # Run Ancestral State Reconstruction
-    ASR <- fitMC2(phy = tree, x = traits$Traits, init.parms = init.parms,
+    ASR <- fitMC2(phy = tree, x = traits, init.parms = init.parms,
                   prior = prior, posterior = TRUE)
 
     # Isolate Output
