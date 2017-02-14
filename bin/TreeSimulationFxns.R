@@ -315,7 +315,7 @@ TraitEvol.sim.ASR <- function(birth = birth, a = a, b = b){
 }
 
 TraitEvol.sim.ASR2 <- function(birth = birth, a = a, b = b,
-                               pp = c(0.9, 0.1), pi = c(0.99, 0.01)){
+                               init.parms = c(0.9, 0.1), prior = c(0.99, 0.01)){
   temp <- TraitEvol2(birth, a, b)
   tree <- temp$tree
   traits <- temp$traits
@@ -336,14 +336,27 @@ TraitEvol.sim3 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
   replicate(nsim, TraitEvol.sim.ASR2(birth, a, b)$liks$liks[1, ])
 }
 
-# Calculate the Root State Likelihood and Save Output
-TraitEvol.sim4 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
-  SimFun <- function(birth, a, b){
-    temp <- TraitEvol.sim.ASR2(birth, a, b)
-    pars <- temp$fit$par
-    LogL <- temp$liks$LogL
+# Calculate the Posterior Likelihoods and Save Output
+TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100
+                          init.parms = c(0.9, 0.1), prior = c(0.99, 0.01)){
+  SimFun <- function(birth, a, b, init.parms, prior){
+
+    # Run Tree and Trait Simulation
+    temp <- TraitEvol2(birth, a, b)
+    tree <- temp$tree
+    traits <- temp$traits
+    rownames(traits) <- traits$OTU
+
+    # Run Ancestral State Reconstruction
+    ASR <- fitMC2(phy = tree, x = traits$Traits, init.parms = init.parms,
+                  prior = prior, posterior = TRUE)
+
+    # Isolate Output
+    pars <- ASR$fit$par
+    LogL <- ASR$liks$LogL
     posterior <- temp$liks$liks
+
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  replicate(nsim, SimFun(birth, a, b))
+  replicate(nsim, SimFun(birth, a, b, init.parms, prior))
 }
