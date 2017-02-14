@@ -153,7 +153,7 @@ TraitEvol <- function(birth = 0.2, a = 0.95, b = 0.98){
   traitNames <- c("Off","On")
 
   # Define Root Ancestor Traits
-  traits[1,] <- c("None", as.character(n + 1), "Off")
+  traits[1,] <- c("None", as.character(Ntips + 1), "Off")
 
   # Run Trait Model Given the Tree
   for (i in 1:(Nedges - 1)){
@@ -301,7 +301,7 @@ TraitEvol2 <- function(birth = 0.2, a = 0.95, b = 0.98){
 
 # Replicated Trait Evolution Simulations
 TraitEvol.sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
-  replicate(nsim, TraitEvol(birth, a, b))
+  replicate(n = nsim, expr = TraitEvol(birth, a, b))
 }
 
 # Replicated Trait Evolution Simulation with ASR
@@ -327,13 +327,13 @@ TraitEvol.sim.ASR2 <- function(birth = birth, a = a, b = b,
 
 # Calculate the Root State Likelihood with ACE
 TraitEvol.sim2 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
-  replicate(nsim, TraitEvol.sim.ASR(birth, a, b)$lik.anc[1, ])
+  replicate(n = nsim, expr = TraitEvol.sim.ASR(birth, a, b)$lik.anc[1, ])
 }
 
 
 # Calculate the Root State Likelihood with fitMC2
 TraitEvol.sim3 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
-  replicate(nsim, TraitEvol.sim.ASR2(birth, a, b)$liks$liks[1, ])
+  replicate(n = nsim, expr = TraitEvol.sim.ASR2(birth, a, b)$liks$liks[1, ])
 }
 
 # Calculate the Posterior Likelihoods and Save Output
@@ -358,5 +358,5 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  replicate(nsim, SimFun(birth, a, b, init.parms, prior))
+  replicate(n = nsim, expr = SimFun(birth, a, b, init.parms, prior))
 }
