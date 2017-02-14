@@ -39,7 +39,7 @@ simmy <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
 # Run Simulaton Across Parameters
 for (i in 1:dim(test.comb)[1]){
   print(i)
-  sim <- TraitEvolASR.SIM(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
+  sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
                         nsim = 1)
   simmy$logl.mean[i] <- mean(sapply(sim[2,], '['))
   simmy$logl.sem[i] <- sem(sapply(sim[2,], '['))
