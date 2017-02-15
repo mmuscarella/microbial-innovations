@@ -291,7 +291,8 @@ TraitEvol2 <- function(birth = 0.2, a = 0.95, b = 0.98){
   min.evol <- min(trait.evol$distance)
 
 
-  return(list(tree = y.tree, traits = Obs.Traits, min.evol = min.evol))
+  return(list(tree = y.tree, traits = Obs.Traits, min.evol = min.evol,
+              trait.evol = trait.evol))
 }
 
 
@@ -359,4 +360,36 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
   replicate(n = nsim, expr = try(SimFun(birth, a, b, init.parms, prior)))
+}
+
+# Calculate the Trait Conservation and Save Output
+TraitEvolCon.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
+                             level = 0.90){
+  SimFun <- function(birth, a, b, level){
+
+    # Run Tree and Trait Simulation
+    temp <- TraitEvol2(birth, a, b)
+    tree <- temp$tree
+    attributes(tree)$seed <- NULL
+    traits <- temp$traits
+    rownames(traits) <- traits$OTU
+    for (i in 2:dim(traits)[2]){
+      traits[, i] <- as.numeric(gsub("On", 1, gsub("Off", 0, traits[, i])))
+    }
+    obs.first <- temp$min.evol
+    obs.traits <- temp$trait.evol
+    obs.numevol <- dim(temp$trait.evol)[1]
+
+    # Run ConsenTrait
+    cons <- ConsenTrait(tree = tree, traits = traits)
+
+    # Isolate Output
+    cons.nodes <- cons$node
+    cons.Nnodes <- dim(cons)[2]
+    cons.first <- min(100 - cons$distance)
+
+    return(list(first.obs = obs.first, first.pred = cons.first, 
+                nevol.obs = obs.numevol, nevol.pred = cons.Nnodes))
+  }
+  replicate(n = nsim, expr = try(SimFun(birth, a, b, level)))
 }
