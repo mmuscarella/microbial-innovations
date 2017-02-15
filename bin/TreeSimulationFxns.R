@@ -358,5 +358,5 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  replicate(n = nsim, expr = SimFun(birth, a, b, init.parms, prior))
+  replicate(n = nsim, expr = try(SimFun(birth, a, b, init.parms, prior)))
 }
