@@ -41,10 +41,12 @@ for (i in 1:dim(test.comb)[1]){
   print(i)
   sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
                         nsim = 100)
+  if (is.list(sim)){
   simmy$logl.mean[i] <- mean(sapply(sim[2,], '['))
   simmy$logl.sem[i] <- sem(sapply(sim[2,], '['))
   simmy$x.mean[i] <- mean(sapply(sim[1,], '[')[1,])
   simmy$y.mean[i] <- mean(sapply(sim[1,], '[')[2,])
+  }
 }
 
 # Save Simulation Output
