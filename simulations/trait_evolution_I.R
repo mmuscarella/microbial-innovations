@@ -32,6 +32,7 @@ test1 <- data.frame(test.a = test.a, test.b = rep(0.90, length(test.a)),
                    sim.sem = rep(NA, length(test.a)))
 
 for (i in 1:dim(test1)[1]){
+  print(paste("Test 1:" i, "of", dim(test1)[1]))
   sim <- TraitEvol.sim(birth = 0.2, a = test1$test.a[i], b = test1$test.b[i], 
                        nsim = 100)
   test1$sim.mean[i] <- mean(sim)
@@ -44,11 +45,14 @@ test2 <- data.frame(test.a = rep(0.90, length(test.b)), test.b = test.b,
                     sim.sem = rep(NA, length(test.b)))
 
 for (i in 1:dim(test2)[1]){
+  print(paste("Test 2:" i, "of", dim(test2)[1]))
   sim <- TraitEvol.sim(birth = 0.2, a = test2$test.a[i], b = test2$test.b[i], 
                        nsim = 100)
   test2$sim.mean[i] <- mean(sim)
   test2$sim.sem[i] <- sem(sim)
 }
+
+print("Test 1 & 2 Done")
 
 # Plot with Simulation 1 and 2
 png(filename="../figures/TraitEvolution_A.png",
@@ -89,11 +93,14 @@ test3 <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
                     sim.sem = rep(NA, dim(test.comb)[1]))
 
 for (i in 1:dim(test3)[1]){
+  print(paste("Test 3:" i, "of", dim(test3)[1]))
   sim <- TraitEvol.sim(birth = 0.2, a = test3$test.a[i], b = test3$test.b[i], 
                        nsim = 100)
   test3$sim.mean[i] <- mean(sim)
   test3$sim.sem[i] <- sem(sim)
 }
+
+print("Test 3 Done")
 
 # Plot Test #3
 png(filename="../figures/TraitEvolution_B.png",
