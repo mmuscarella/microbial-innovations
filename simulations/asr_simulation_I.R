@@ -1,6 +1,6 @@
 ################################################################################
-# 
-# Trait Evolution Simulations: 
+#
+# Trait Evolution Simulations:
 #       Ancestral State Reconstruction (ASR) of Evolved Traits
 #
 # Written by: Mario Muscarella
@@ -10,7 +10,7 @@
 # Simulation Goals:
 #       1. How does ASR likelihood change with trait evolution parameters
 #       2. How well does ASR predict rates across evolution parameters
-#       3. 
+#       3.
 #
 ################################################################################
 
@@ -39,13 +39,13 @@ simmy <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
 # Run Simulaton Across Parameters
 for (i in 1:dim(test.comb)[1]){
   print(i)
-  sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
+  sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2],
                         nsim = 100)
   if (is.list(sim)){
-  simmy$logl.mean[i] <- mean(sapply(sim[2,], '['))
-  simmy$logl.sem[i] <- sem(sapply(sim[2,], '['))
-  simmy$x.mean[i] <- mean(sapply(sim[1,], '[')[1,])
-  simmy$y.mean[i] <- mean(sapply(sim[1,], '[')[2,])
+  simmy$logl.mean[i] <- try(mean(sapply(sim[2,], '[')))
+  simmy$logl.sem[i] <- try(sem(sapply(sim[2,], '[')))
+  simmy$x.mean[i] <- try(mean(sapply(sim[1,], '[')[1,]))
+  simmy$y.mean[i] <- try(mean(sapply(sim[1,], '[')[2,]))
   }
 }
 
