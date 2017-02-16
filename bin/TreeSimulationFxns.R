@@ -355,7 +355,7 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
     # Isolate Output
     pars <- ASR$fit$par
     LogL <- ASR$liks$LogL
-    posterior <- temp$liks$liks
+    posterior <- ASR$liks$liks
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
