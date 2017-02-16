@@ -22,7 +22,7 @@ rowSums(IMG.traits > 1)
 # Drop tips not found in trait table
 missing <- subset(GG.um$tip.label, 
                   !(GG.um$tip.label %in% colnames(IMG.traits)))
-IMG.tree <- drop.tip(GreenTree.um, missing)
+IMG.tree <- drop.tip(GG.um, missing)
 
 # Reformat Trait Table
 IMG.trait.tab <- data.frame(colnames(IMG.traits), t(IMG.traits))
