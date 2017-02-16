@@ -4,6 +4,7 @@ test-checkpoint.ipynb
 
 data/*.logfile
 analyses/.Rhistory
+simulations/.Rhistory
 SeqChecks.ipynb
 test.ipynb
 .DS_Store
