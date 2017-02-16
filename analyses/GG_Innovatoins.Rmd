@@ -11,7 +11,7 @@ output:
 ---
 
 
-## Initial Setup
+# Initial Setup
 ```{r}
 # Clear Environment and Set Working Directory
 rm(list=ls())
@@ -66,8 +66,8 @@ GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", format = "rdp", col.tax = 2,
 
 ```
 
-
-# Edge Length Distribution
+# Edge Length Patterns
+## Edge Length Distribution
 ```{r, results = "hide"}
 GG.edges <- GG$edge.length
 
@@ -163,6 +163,7 @@ img <- readPNG("../figures/NodeSupport_GG.png")
 grid.raster(img)
 ```
 
+# GreenGenes Tree
 ## GG Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
 png(filename="../figures/GG_explore.png",
@@ -234,7 +235,7 @@ png(filename="../figures/GG_Cyano.png",
     width = 1600, height = 1600, res = 96*2)
 
 GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", col.tax = 2, tax.levels = 6)
-GG.tax.rooted <- LTP.tax[match(GreenTree.r$tip.label, GG.tax$OTU), ]
+GG.tax.rooted <- GG.tax[match(GreenTree.r$tip.label, GG.tax$OTU), ]
 all.equal(as.factor(GG.tax.rooted$OTU), as.factor(GreenTree.r$tip.label))
 
 GG.cyano <- GG.tax.rooted$Phylum
@@ -253,7 +254,7 @@ for (i in 1:length(GG.cyano)){
 
 groupInfo <- split(GreenTree.r$tip.label, GG.cyano)
 
-# Only 16 Cyanos?
+# How Many Cyanos
 length(grep("[C|c]yano*", GG.tax.rooted$Phylum))
 
 GG.cy <- groupOTU(GreenTree.r, groupInfo, group_name = "Cyano")
@@ -262,10 +263,10 @@ levels(attributes(GG.cy)$Cyano) <- c("Root", names(groupInfo))
 
 GG <- ggtree(GG.cy, aes(color = Cyano, layout="rectangular"))
 
-GG + geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
+GG + geom_text(aes(label = node), show.legend = FALSE,
             hjust=-0.1, vjust = -0.5, size = 2) + 
   geom_point2(aes(subset=(node == 4587)), size=4, shape=18, 
-                 colour=ggplotColours(n = 4)[4], fill = "gray80") + 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
   geom_point2(aes(subset=(node == 2732)), size=4, shape=18, 
                  colour=ggplotColours(n = 4)[1], fill = "gray80") + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
@@ -283,7 +284,7 @@ img <- readPNG("../figures/GG_Cyano.png")
 grid.raster(img)
 ```
 
-# ID Midpoint and Cyano tips
+## ID Midpoint and Cyano tips
 ```{r}
 # Root
 D <- cophenetic(GreenTree.r)
@@ -349,7 +350,7 @@ reg <- GreenTree.r2$edge.length
 um <- GreenTree.um$edge.length
 
 # Are nodes the same?
-sum(livingTree.r2$node.label != livingTree.um$node.label)
+sum(GreenTree.r2$node.label != GreenTree.um$node.label)
 
 zero.branch <- which(reg == 0 | um == 0)
 reg.l <- log10(reg[-zero.branch]) + 2.5
@@ -361,7 +362,7 @@ ttest(mod1, 2, 1)
 
 par(mar = c(6,6,1,1) + 0.1, oma = c(0.5,0.5,0.5,0.5))
 plot(reg.l, um.l, 
-     xlim = c(0, 3.5), ylim = c(0, 4),
+     xlim = c(-2, 2.5), ylim = c(-1, 4),
      axes=F, xlab = "", ylab = "")
 
 # abline(mod1, from = -2.5, to = 1.5, lty = 2, lwd = 2, col = "red")
@@ -555,47 +556,7 @@ if (run.all == TRUE){
 
 ```
 
-
-# Identify polytomies in gene tree and plot in the ultrametric tree
-```{r}
-# Trees
-str(livingTree.r2)
-str(livingTree.um)
-
-LTP.r.edges <- livingTree.r2$edge.length
-LTP.u.edges <- livingTree.um$edge.length
-den.dis.r <- density(log10(LTP.r.edges))
-den.dis.u <- density(log10(LTP.u.edges))
-mins.r <- peaks(den.dis.r$x, den.dis.r$y, mode = "min")
-mins.u <- peaks(den.dis.u$x, den.dis.u$y, mode = "min")
-
-mins.r$x
-mins.u$x
-thres.test1 <- mins.r$x[1]
-thres.test2 <- mins.r$x[2]
-
-
-test.phy <- di2multi3(phy1 = livingTree.r2, 
-                      phy2 = livingTree.um, tol = (10^thres.test1) * 10)
-
-poly.node <- test.phy$multi.new
-test.phy <- groupOTU(test.phy, groupInfo, group_name = "Domain")
-levels(attributes(test.phy)$Domain) <- c("root", names(groupInfo), "polytomy")
-
-test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular")
-test.tree + geom_point2(aes(subset=(node == 11934)), size=1, 
-                         shape=18, colour="black", fill = "gray80") + 
-  geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
-              colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[1:3]), 
-                     labels = c("polytomy", "Archaea", "Bacteria"))
-ggsave("../figures/Test_Tree.png", width = 6, height = 4, dpi = 250)
-rm(test.tree)
-
-```
-
-# Polytomy Movie
+## Polytomy Movie
 ```{r}
 if (run.all == TRUE){
   system("rm ../figures/movie/G*.png")
@@ -628,10 +589,11 @@ if (run.all == TRUE){
   rm(test.tree)
   
   system("convert -loop 10 -delay 100 '../figures/movie/*.png' '../figures/movie/GreenGenes.gif'")
+  system("rm ../figures/movie/G*.png")
 }
 ```
 
-# Test Geological Window
+## Test Geological Window
 ```{r}
 thres = 0.005
 
@@ -661,531 +623,41 @@ test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3,
 rm(test.tree)
 ```
 
-# Import Trait Data
+# Traits
 ```{r}
-traits <- read.delim("../data/LTPs123.faprotax") , header = T, row.names = 1)
-LTP.tax <- read.tax("../data/LTPs123_unique.nr_v123.wang.taxonomy", format = "rdp", col.tax = 2)
-LTP.tax2 <- LTP.tax[match(livingTree.um$tip.label, LTP.tax$OTU), ]
-LTP.tax <- read.delim("../data/LTPs123_unique.full.taxonomy")
-LTP.tax2 <- LTP.tax[match(livingTree.um$tip.label, LTP.tax$OTU), ]
+IMG.traits <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, 
+                         row.names = 1)
+dim(IMG.traits)
+colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
+sum(GreenTree.um$tip.label %in% colnames(IMG.traits))
+sum(colnames(IMG.traits) %in% GreenTree.um$tip.label)
 
-traits[1:5, 1:5]
-colSums(traits)
+rowSums(IMG.traits > 1)
 
-sum(colSums(traits) == 0)
-sum(rowSums(traits) == 0)
+# Drop tips not found in trait table
+missing <- subset(GreenTree.um$tip.label, 
+                  !(GreenTree.um$tip.label %in% colnames(IMG.traits)))
 
-unknowns <- LTP.tax2[which(LTP.tax2$OTU %in% names(which(colSums(traits) == 0))), ]
-dim(unknowns)
-unknowns[1:5, ]
+IMG.tree <- drop.tip(GreenTree.um, missing)
+IMG.trait.tab <- data.frame(colnames(IMG.traits), t(IMG.traits))
 
-str(test.phy)
-is.ultrametric(test.phy)
-test.phy2 <- drop.tip(test.phy, c(unknowns$OTU))
+precal <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, row.names = 1)
+dim(precal)
 
-traits2 <- traits[, which(!colnames(traits) %in% unknowns$OTU)]
+rowSums(precal) == rowSums(IMG.traits)
 
-
-c1.metab <- as.data.frame(t(traits2[1:10, ]))
-#c1.metab <- c1.metab[, c(which(colSums(c1.metab) > 0))]
-
-chemo.metab <- as.data.frame(as.numeric(t(traits[90,])))
-
-```
-
-
-# Add Traits to Tree
-```{r}
-geo.test <- data.frame(xmin = 2500, xmax = 4000, ymin = -Inf, ymax = Inf)
-
-trait <- chemo.metab
-colnames(trait) <- "Chemo.Het"
-
-thres = 0.01
-
-str(test.phy)
-is.ultrametric(test.phy)
-
-# Remove Tips with Unknown Traits
-unkns <- as.character(unknowns$OTU)
-length(unkns)
-length(livingTree.um$tip.label)
-sum(livingTree.um$tip.label %in% unkns)
-sub.Tree.um <- drop.tip(livingTree.um, unkns, trim.internal = T)
-sub.Tree.org <- drop.tip(livingTree.r2, unkns, trim.internal = T)
-
-sub.Tree.multi <- di2multi3(phy1 = sub.Tree.org, phy2 = sub.Tree.um, 
-                        tol = thres)
-
-poly.node <- sub.Tree.multi$multi.new
-sub.Tree.multi2 <- node.age(sub.Tree.multi)
-sub.Tree.multi2 <- groupOTU(sub.Tree.multi2, groupInfo, group_name = "Domain")
-levels(attributes(sub.Tree.multi2)$Domain) <- c("root", names(groupInfo))
-
-# Plot Tree With Traits
-test.tree <- ggtree(tr = sub.Tree.multi2, aes(color = Domain), layout="rectangular") + 
-  geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
-              colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  geom_rect(data = geo.test, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-              color="grey", fill = "gray", alpha=0.25, inherit.aes = FALSE)
-
-test.tree
-
-c1.metab <- as.data.frame(t(traits2[1:10, ]))
-#c1.metab <- c1.metab[, c(which(colSums(c1.metab) > 0))]
-
-chemo.metab <- as.data.frame(as.numeric(t(traits2[90,])))
-trait <- chemo.metab
-colnames(trait) <- "Chemo.Het"
-rownames(trait) <- colnames(traits2)
-
-gheatmap2(test.tree, trait, high = "red", low = "white", color = "white", 
-          offset = 1, width = 0.1, font.size = 2, colnames_position = "top") + 
-theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) +
-  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
-                     labels = c("polytomy", "Archaea", "Bacteria")) + 
-  annotate("text", hjust = 0, x = max(sub.Tree.multi2$ages) * 0.05, 
-           y = length(sub.Tree.multi2$tip.label) * 0.95, 
-           label = paste("Threshold =", round(thres, 4)))
-
-
-test.tree <- ggtree(sub.Tree.multi2, aes(color = Domain), layout="rectangular") + 
-  geom_rect(data = geo.test, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-              color="grey80", fill = "gray", alpha=0.5, inherit.aes = FALSE)
-
-geo.test <- data.frame(xmin = 1800, xmax = 2200, ymin = -Inf, ymax = Inf)
-
-edge.col <- attributes(sub.Tree.multi2)$Domain
-
-
-raw <- gheatmap2(test.tree, trait, high = "red", low = "white", color = NULL, 
-          offset = 1, width = 0.1, font.size = 2,
-          colnames_position = "top", guide = "none") + 
-  geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18, 
-              colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_alpha(guide = "none") + 
-  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
-                     labels = c("polytomy", "Archaea", "Bacteria")) + 
-  annotate("text", hjust = 0, x = max(sub.Tree.multi2$ages) * 0.05, 
-           y = length(sub.Tree.multi2$tip.label) * 0.95, 
-           label = paste("Threshold =", round(thres, 4))) 
-  scale_x_ggtree(raw)
-
-# + 
-  #geom_rect(data = geo.test, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-  #            color="grey80", fill = "gray", alpha=0.5, inherit.aes = FALSE)
-
-par(oma = c(4, 1, 1, 1))
-edge.col <- attributes(sub.Tree.multi2)$Domain
-main <- plot(sub.Tree.multi2, edge.color = edge.col, show.tip.label = FALSE,
-             no.margin = T) # , y.lim = c(length(sub.Tree.multi2$tip.label), 0))
-axis(side = 1, at = c(seq(0, 5000, 1000)))
-
-str(main)
-
-trait.test <- edge.col
-
-```
-
-# Geological Map 
-```{r}
-# Define Geological Events
-geol <- data.frame(matrix(NA, 3, 4))
-colnames(geol) <- c("event", "date", "min", "max")
-geol[1, ] <- c("Great Oxidation Event", 2300, 1800, 2500)
-geol[2, ] <- c("Methanian", 2700, 2500, 2800)
-geol[3, ] <- c("Sulfur Dominance", 3000, 2800, 3500)
-
-geol$date <- as.numeric(geol$date)
-geol$min <- as.numeric(geol$min)
-geol$max <- as.numeric(geol$max)
-
-geol.r <- 4500 - geol[, 2:4]
-
-geo.ox <- data.frame(xmin = geol.r[1, 2], xmax = geol.r[1, 3], 
-                     ymin = -Inf, ymax = Inf)
-geo.met <- data.frame(xmin = geol.r[2, 2], xmax = geol.r[2, 3], 
-                      ymin = -Inf, ymax = Inf)
-geo.sul <- data.frame(xmin = geol.r[3, 2], xmax = geol.r[3, 3], 
-                      ymin = -Inf, ymax = Inf)
-
-
-# Define Traits
-rownames(traits2)
-rownames(traits2)[grep("*cyano*", rownames(traits2))]
-
-chem <- colSums(traits2[90, ])
-phot <- colSums(traits2[grep("*photo*", rownames(traits2)), ]) >= 1
-pho2 <- colSums(traits2[grep("*anoxygenic_photo*", rownames(traits2)), ]) >= 1
-meth <- colSums(traits2[grep("*meth*", rownames(traits2)), ]) >= 1
-sulf <- colSums(traits2[grep("*sul*", rownames(traits2)), ]) >= 1
-deni <- colSums(traits2[grep("*denitri*", rownames(traits2)), ]) >= 1
-trait <- data.frame(chem, phot, meth, sulf, deni) 
-
-thres = 0.075
-sub.Tree.multi <- di2multi3(phy1 = sub.Tree.org, phy2 = sub.Tree.um, 
-                        tol = thres)
-
-poly.node <- sub.Tree.multi$multi.new
-sub.Tree.multi2 <- node.age(sub.Tree.multi)
-sub.Tree.multi2 <- groupOTU(sub.Tree.multi2, groupInfo, group_name = "Domain")
-levels(attributes(sub.Tree.multi2)$Domain) <- c("root", names(groupInfo))
-
-
-geo.tree <- ggtree(sub.Tree.multi2, aes(color = Domain), layout="rectangular") + 
-  geom_rect(data = geo.ox, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-              color="grey85", fill = "gray85", inherit.aes = FALSE) + 
-  geom_rect(data = geo.met, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-              color="grey90", fill = "gray90", inherit.aes = FALSE) + 
-  geom_rect(data = geo.sul, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-              color="grey95", fill = "gray95", inherit.aes = FALSE)
-  geo.tree$layers <- rev(geo.tree$layers)
-
-
-
-geo.traits <- gheatmap2(geo.tree, trait, high = "red", low = "white", color = NULL, 
-          offset = 2, width = 0.2, font.size = 2.5,
-          colnames_position = "top", guide = "none") + 
-  geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18, 
-              colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme_tree2(legend.position="top", legend.key = element_rect(colour = NA),
-              plot.margin = unit(c(1,1,1,1), "cm")) + 
-  scale_alpha(guide = "none") + 
-  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1:3, 1)]), 
-                     labels = c("polytomy", "Archaea", "Bacteria")) + 
-  annotate("text", hjust = 0, x = 0 , y = length(sub.Tree.multi2$tip.label), 
-           label = paste("Threshold =", round(thres, 4)), size = 3) + 
-  annotate("text", hjust = 0, x = geol.r[1,1] , y = length(sub.Tree.multi2$tip.label) * 0.6, 
-           label = "Great Oxidation", size = 3, angle = 90, vjust = 1) +
-  annotate("text", hjust = 0, x = geol.r[2,1] , y = length(sub.Tree.multi2$tip.label) * 0.6, 
-           label = "Methane Era", size = 3, angle = 90, vjust = 1) +
-  annotate("text", hjust = 0, x = geol.r[3,1] , y = length(sub.Tree.multi2$tip.label) * 0.6, 
-           label = "Sulfur Era", size = 3, angle = 90, vjust = 1) +
-  scale_x_continuous(breaks = seq(0,4000, 1000), expand = c(0.01,0))
-
-png(filename="../figures/GeoTree.png", width = 2000, height = 800, res = 96*2)
-
-geo.traits
-
-dev.off()
-graphics.off()
-
-img <- readPNG("../figures/GeoTree.png")
-grid.raster(img)
-
-```
-
-
-# Identify a specific trait
-```{r}
-str(traits2)
-rownames(traits2)[grep("denit*", rownames(traits2))]
-denit <- traits2[grep("denit*", rownames(traits2)), ]
-denit <- denit[, which(colSums(denit) > 0)]
-denit
-LTP.tax2[which(LTP.tax2$OTU %in% colnames(denit)), 1:7]
-
-
-LTP.tax2[grep("*denit*", LTP.tax2$Genus), ]
-
-
-
-
-```
-
-
-
-
-# Repeat with Other trees (still working here)
-
-## NTL Exploratory Tree with Domain Grouping
-```{r, results = "hide"}
-png(filename="../figures/NTL_explore.png",
-    width = 1600, height = 1600, res = 96*2)
-
-NTL.2 <- NTL
-NTL.tax2 <- NTL.tax[na.omit(match(NTL.2$tip.label, NTL.tax$OTU)), ]
-NTL.tax2[which(NTL.tax2$Domain == "unknown"), ]$Domain <- "Bacteria"
-groupInfo <- split(NTL.2$tip.label, NTL.tax2$Domain)
-newTree <- groupOTU(NTL.2, groupInfo, group_name = "Domain")
-levels(attributes(newTree)$Domain) <- c("root", names(groupInfo))
-newTree$node.label[which(attributes(newTree)$Domain == "root")]
-ggtree(newTree, aes(color = Domain), layout="rectangular") + 
-  geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
-            hjust=-0.1, vjust = -0.5, size = 2) + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) 
-
-# Close Plot Device
-dev.off()
-graphics.off()
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/NTL_explore.png")
-grid.raster(img)
-```
-
-Instead of trying to remove the Eukaryota from this tree, I decided to go back
-to the original data and remove the Eukaryote manually and then generate a new
-tree and taxonomy file. I will import them here and continue. 
-
-## Import Tree Files and Taxonomy Information
-```{r}
-NTL <- read.tree("../data/NTL.clean.tree")
-
-NTL.tax <- read.tax("../data/NTL.clean.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
-
-
-
-NTL <- read.tree("../data/NTL.tree")
-
-NTL.tax <- read.tax("../data/nmicrobiol201648_s7.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
-
-
-
-
-# Reorder Tax
-NTL.tax <- NTL.tax[match(NTL$tip.label, NTL.tax$OTU), ]
-all.equal(as.character(NTL$tip.label), as.character(NTL.tax$OTU))
-
-quantile(NTL$edge.length)
-#NTL$edge.length[which(NTL$edge.length == 0)] <- 0.0001
-#quantile(NTL$edge.length)
-
-
-```
-
-
-# Plot Tree with Midpoint Root
-
-```{r, results = "hide"}
-png(filename="../figures/NTL_root.png",
-    width = 1600, height = 1600, res = 96*2)
-
-#domain <- sapply(strsplit(NTL$tip.label, "_"), "[", 1)
-#groupInfo <- split(NTL$tip.label, domain)
-
-sum(NTL$tip.label != NTL.tax$OTU)
-
-groupInfo <- split(NTL$tip.label, NTL.tax$Domain)
-NTL.g <- groupOTU(NTL, groupInfo, group_name = "Domain")
-
-NTL.r <- midpoint.root(NTL.g)
-
-NTL.tax2 <- NTL.tax[match(NTL.r$tip.label, NTL.tax$OTU), ]
-NTL.tax2$Domain[which(NTL.tax2$Domain == "unknown")] <- "Bacteria"
-groupInfo <- split(NTL.r$tip.label, NTL.tax2$Domain)
-NTL.r2 <- groupOTU(NTL.r, groupInfo, group_name = "Domain")
-
-levels(attributes(NTL.r2)$Domain) <- c("root", names(groupInfo))
-#levels(attributes(NTL.g)$Domain) <- c(names(groupInfo))
-
-rt <- ggtree(NTL.r2, aes(color = Domain), layout="rectangular")
-rt + geom_point2(aes(subset=(node == 11934)), size=4, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:4])) 
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clean Up
-rm(rt)
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/NTL_root.png")
-grid.raster(img)
-```
-
-
-```{r}
-NTL.3 <- drop.tip(NTL.r2, c(NTL.tax2$OTU[which(NTL.tax2$Domain == "Eukaryota")]))
-NTL.tax.3 <- NTL.tax2[which(NTL.tax2$Domain != "Eukaryota"), ]
-
-NTL.tax.3 <- NTL.tax.3[match(NTL.3$tip.label, NTL.tax.3$OTU), ]
-length(NTL.3$tip.label)
-length(NTL.tax.3$OTU)
-sum(NTL.3$tip.label != NTL.tax.3$OTU)
-
-groupInfo <- split(NTL.3$tip.label, NTL.tax.3$Domain)
-NTL.3 <- groupOTU(NTL.3, groupInfo, group_name = "Domain")
-
-levels(attributes(NTL.3)$Domain) <- c("root", names(groupInfo))
-#levels(attributes(NTL.g)$Domain) <- c(names(groupInfo))
-
-rt <- ggtree(NTL.3, aes(color = Domain), layout="rectangular")
-rt + geom_point2(aes(subset=(node == 11934)), size=4, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:4])) 
-
-```
-
-
-## Export Rooted Tree
-```{r}
-write.tree(NTL.3, file = "../data/NTL.rooted.tre")
-write.nexus(NTL.3, file = "../data/NTL.rooted.nex")
-```
-
-## Identify the NTL Node that seperates bacteria and archaea
-```{r, results = "hide"}
-png(filename="../figures/NTL_archaea.png",
-    width = 1600, height = 1600, res = 96*2)
-
-
-groupInfo <- split(NTL.3$tip.label, NTL.tax.3$Domain)
-NTL.3 <- groupOTU(NTL.3, groupInfo, group_name = "Domain")
-
-par(mar=c(1,1,1,3))
-cp <- ggtree(NTL.3, aes(color = Domain), layout="rectangular")
-cp + geom_point2(aes(subset=(node == 18227)), size=3, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
- 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
-  guides(colour = guide_legend(override.aes = list(shape = NA, label = NA))) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clean Up
-rm(cp)
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/NTL_archaea.png")
-grid.raster(img)
-```
-
-The Bac/Arc node is 1715
-
-# ID Nodes that separate
-```{r}
-D <- cophenetic(NTL.3)
-dd <- max(D)
-ii <- which(D == dd)[1]
-ii <- c(ceiling(ii/nrow(D)), ii%%nrow(D))
-if (ii[2] == 0) 
-  ii[2] <- nrow(D)
-spp <- rownames(D)[ii]
-nn <- which(NTL.3$tip.label == spp[2])
-
-
-
-```
-
-# Isolate Cyanobacteria and Identify the LTP Node that seperates cyanos
-```{r, results = "hide"}
-png(filename="../figures/NTL_Cyano.png",
-    width = 1600, height = 1600, res = 96*2)
-
-sum(NTL.tax.3$OTU != NTL.3$tip.label)
-
-sum(NTL.tax.3$Class == "Cyanobacteria")
-
-Domain.NTL <- NTL.tax.3$Domain
-for (i in 1:length(Domain.NTL)){
-  if (NTL.tax.3$Class[i] == "Cyanobacteria") {
-    Domain.NTL[i] <- "Cyanobacteria"
-  }
-}
-
-groupInfo <- split(NTL.3$tip.label, Domain.NTL)
-NTL.3 <- groupOTU(NTL.3, groupInfo, group_name = "Domain")
-
-cp <- ggtree(NTL.3, aes(color = Domain), layout="rectangular")
-cp + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  geom_text2(aes(subset=!isTip, label = node), hjust=-0.1, vjust = -0.5, size = 2) + 
-  guides(colour = guide_legend(override.aes = list(shape = NA, label = NA))) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:4])) 
-
-# Extract Clade 2018
-# viewClade(cp + geom_tiplab() +
-#             geom_text(aes(subset=!isTip, label = node), show.legend = FALSE,
-#             hjust=-0.1, vjust = -0.5, size = 2) + 
-#             theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-#             scale_color_manual(values=c(ggplotColours(n = 4)[c(3,4,2,1)])), 
-#           node=2018)
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clean Up
-#```
-## Show Plot
-#```{r}
-img <- readPNG("../figures/NTL_Cyano.png")
-grid.raster(img)
-```
-
-# Geological Map
-```{r}
-# Define Geological Events
-geol <- data.frame(matrix(NA, 3, 4))
-colnames(geol) <- c("event", "date", "min", "max")
-geol[1, ] <- c("Great Oxidation Event", 2300, 1800, 2500)
-geol[2, ] <- c("Methanian", 2700, 2500, 2800)
-geol[3, ] <- c("Sulfur Dominance", 3000, 2800, 3500)
-
-geol$date <- as.numeric(geol$date)
-geol$min <- as.numeric(geol$min)
-geol$max <- as.numeric(geol$max)
-
-geol.r <- 4500 - geol[, 2:4]
-
-geo.ox <- data.frame(xmin = geol.r[1, 2], xmax = geol.r[1, 3], 
-                     ymin = -Inf, ymax = Inf)
-geo.met <- data.frame(xmin = geol.r[2, 2], xmax = geol.r[2, 3], 
-                      ymin = -Inf, ymax = Inf)
-geo.sul <- data.frame(xmin = geol.r[3, 2], xmax = geol.r[3, 3], 
-                      ymin = -Inf, ymax = Inf)
-
-NTL.um <- read.tree("../data/NTL.dated.tre")
-
-png(filename="../figures/NTL_dated.png",
-    width = 1600, height = 1600, res = 96*2)
-
-sum(NTL.um$tip.label, NTL.tax.3$OTU)
-groupInfo <- split(NTL.3$tip.label, NTL.tax.3$Domain)
-NTL.3 <- groupOTU(NTL.3, groupInfo, group_name = "Domain")
-
-NTL.um <- groupOTU(NTL.um, groupInfo, group_name = "Domain")
-levels(attributes(NTL.um)$Domain) <- c("root", names(groupInfo))
-um <- ggtree(NTL.um, aes(color = Domain), layout="rectangular")
-um + geom_point2(aes(subset=(node == 1715)), size=4, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
-  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
-
-# Close Plot Device
-dev.off()
-graphics.off()
-
-# Clear Up
-rm(um)
-```
-## Show Plot
-```{r}
-img <- readPNG("../figures/NTL_dated.png")
-grid.raster(img)
 ```
 
 ```{r}
-NTLtraits <- t(read.delim("../data/NTL.faprotax", header = T, row.names = 1))
-
-colSums(NTLtraits)
-length(NTL.3$tip.label)
-
 source("../bin/ConsenTrait.R")
-ConsenTrait(NTL.3, NTLtraits[, 1:5], 0.9, "../data/ConsenTrait.test.txt")
+trait.cons <- ConsenTrait(tree = IMG.tree, traits = IMG.trait.tab)
+
+
+
+
 
 
 ```
+
+
+
