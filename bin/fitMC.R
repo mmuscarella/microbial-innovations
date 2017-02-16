@@ -100,8 +100,8 @@ fitMC2 <- function(phy, x, init.parms = c(0.5, 0.5),
   #x <- sim$traits
 
   # Box Optimization Parameters
-  min.h <- 1e-2
-  max.h <- 1e2
+  min.h <- 1e-5
+  max.h <- 1e5
   
   # Define Parametesr
   init.parms <- init.parms
