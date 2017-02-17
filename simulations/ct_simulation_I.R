@@ -15,10 +15,10 @@
 ################################################################################
 
 # Load Dependencies
-library("ape")
-library("geiger")
-library("expm")
-library("MASS")
+require("ape")||install.packages("ape");require("ape")
+require("geiger")||install.packages("geiger");require("geiger")
+require("expm")||install.packages("expm");require("expm")
+require("MASS")||install.packages("MASS");require("MASS")
 
 # Load Source Functions
 source("../bin/TreeSimulationFxns.R")
@@ -41,12 +41,12 @@ simmy <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
 for (i in 1:dim(test.comb)[1]){
   print(paste("ConsenTrait Simulation:", i, "of", dim(test.comb)[1]))
   sim <- TraitEvolCon.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
-                   nsim = 100, level = 0.90)
-  if (is.list(sim)){
-    simmy$first.obs.mean[i] <- mean(sapply(sim[1,], '['))
-    simmy$first.pred.mean[i] <- mean(sapply(sim[2,], '['))
-    simmy$nevol.obs.mean[i] <- mean(sapply(sim[3,], '['))
-    simmy$nevol.pred.mean[i] <- mean(sapply(sim[4,], '['))
+                   nsim = 10, level = 0.90)
+  if (dim(sim)[1] > 1){
+    simmy$first.obs.mean[i] <- mean(sim[, 1])
+    simmy$first.pred.mean[i] <- mean(sim[, 2])
+    simmy$nevol.obs.mean[i] <- mean(sim[, 3])
+    simmy$nevol.pred.mean[i] <- mean(sim[, 4])
   }
 }
 
