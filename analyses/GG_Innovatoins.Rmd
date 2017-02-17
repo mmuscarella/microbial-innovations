@@ -646,18 +646,118 @@ dim(precal)
 
 rowSums(precal) == rowSums(IMG.traits)
 
+summary(IMG.Cons$distance)
+
 ```
 
 ```{r}
-source("../bin/ConsenTrait.R")
-trait.cons <- ConsenTrait(tree = IMG.tree, traits = IMG.trait.tab)
+IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
+
+
+# How "Deep" are traits conserved
+png(filename="../figures/GG_TraitConservation.png",
+      width = 800, height = 800, res = 96*2)
+  
+par(mar = c(4, 4, 1, 1))
+plot(log10(sort(IMG.Cons$distance, decreasing = T)), 
+     xlab = "", ylab = "", las = 1, col=rgb(0, 0, 1, 0.5), pch=16)
+
+mtext(side = 1, text = "Index", line = 2.5, cex = 1.25)
+mtext(side = 2, text = expression(paste("Date (log"[10], ")")), 
+      line = 2.5, cex = 1.25)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitConservation.png")
+grid.raster(img)
+```
+
+
+```{r}
+# Trait Origins
+head(IMG.Cons)
+
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons$trait)), 4))
+colnames(trait.sum) <- c("FirstDate", "MedianDate", "LateDate", "NumEvol")
+
+for (i in 1:length(unique(IMG.Cons$trait))){
+  temp <- IMG.Cons[IMG.Cons$trait == i, ]
+  first.evol <- max(temp$distance)
+  med.evol <- median(temp$distance)
+  last.evol <- min(temp$distance)
+  n.evol <- dim(temp)[1]
+  trait.sum[i, 1] <- first.evol
+  trait.sum[i, 2] <- med.evol
+  trait.sum[i, 3] <- last.evol
+  trait.sum[i, 4] <- n.evol
+}
+
+trait.sum <- trait.sum[trait.sum$NumEvol > 0, ]
+
+png(filename="../figures/GG_TraitConservationDates.png",
+      width = 1800, height = 600, res = 96*2)
+
+
+layout(matrix(1:3, ncol = 3))
+par(mar = c(4, 4, 2, 1), oma = c(1, 1, 1, 1))
+
+plot(log10(trait.sum$FirstDate), jitter(trait.sum$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "First Date of Conservation")
+
+mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Conservation Points", 
+      line = 2.5, cex = 1)
+
+plot(log10(trait.sum$MedianDate), jitter(trait.sum$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Median Date of Conservation")
+
+mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Conservation Points", 
+      line = 2.5, cex = 1)
 
 
 
+plot(log10(trait.sum$LateDate), jitter(trait.sum$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Latest Date of Conservation")
+
+mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Conservation Points", 
+      line = 2.5, cex = 1)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitConservationDates.png")
+grid.raster(img)
+```
+
+```{r}
+trait.sum
+
+dim(trait.sum)[1]
+sum(trait.sum$NumEvol == 1)
+sum(trait.sum$NumEvol > 10)
+sum(trait.sum$NumEvol > 1 & trait.sum$NumEvol <= 10)
 
 
 
 ```
-
-
 

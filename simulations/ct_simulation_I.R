@@ -26,8 +26,8 @@ source("../bin/ConsenTrait.R")
 
 
 # Define Trait Evolution Parameters
-test.a <- seq(0.51, 0.99, 0.01)
-test.b <- seq(0.51, 0.99, 0.01)
+test.a <- seq(0.51, 0.99, 0.02)
+test.b <- seq(0.51, 0.99, 0.02)
 test.comb <- expand.grid(test.a, test.b)
 
 # Define Simulation Output
@@ -39,7 +39,7 @@ simmy <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
 
 # Run Simulaton Across Parameters
 for (i in 1:dim(test.comb)[1]){
-  print(i)
+  print(paste("ConsenTrait Simulation:", i, "of", dim(test.comb)[1]))
   sim <- TraitEvolCon.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
                    nsim = 100, level = 0.90)
   if (is.list(sim)){
@@ -51,5 +51,5 @@ for (i in 1:dim(test.comb)[1]){
 }
 
 # Save Simulation Output
-write.table(simmy, "../simulations/output/con-trait_simulation.txt", quote = F,
-            sep = "\t", row.names = F, col.names = T)
+write.table(simmy, "../simulations/output/ConsenTraitSimulation.txt", 
+            quote = F, sep = "\t", row.names = F, col.names = T)
