@@ -1,7 +1,8 @@
-ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9){
-  
-  library("adephylo")
-  library("phytools")
+ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
+                        status = TRUE){
+
+  require("adephylo")||install.packages("adephylo");require("adephylo")
+  require("phytools")||install.packages("phytools");require("phytools")
 
   # Import Tree and Root  if Needed
   if (is.rooted(tree) == FALSE){
@@ -32,8 +33,12 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9){
 
   # Loop Through Traits
   for (i in 2:ncol(table)){
-    print(paste("Analyzing Trait", i - 1, "of",
-                ncol(table)[[1]] - 1, "...", sep = " "), quote = F)
+
+    # Status Indicator
+    if (status == TRUE){
+      print(paste("Analyzing Trait", i - 1, "of",
+                  ncol(table)[[1]] - 1, "...", sep = " "), quote = F)
+    }
 
     # Make Temp Table
     table_tmp <- data.frame(ID = table[, 1], Trait = table[,i])

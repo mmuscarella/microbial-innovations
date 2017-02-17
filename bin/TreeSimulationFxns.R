@@ -385,11 +385,12 @@ TraitEvolCon.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
 
     # Isolate Output
     cons.nodes <- cons$node
-    cons.Nnodes <- dim(cons)[2]
+    cons.Nnodes <- dim(cons)[1]
     cons.first <- min(100 - cons$distance)
 
-    return(list(first.obs = obs.first, first.pred = cons.first, 
+    return(data.frame(first.obs = obs.first, first.pred = cons.first,
                 nevol.obs = obs.numevol, nevol.pred = cons.Nnodes))
   }
+
   replicate(n = nsim, expr = try(SimFun(birth, a, b, level)))
 }
