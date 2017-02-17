@@ -381,16 +381,20 @@ TraitEvolCon.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
     obs.numevol <- dim(temp$trait.evol)[1]
 
     # Run ConsenTrait
-    cons <- ConsenTrait(tree = tree, traits = traits)
+    cons <- ConsenTrait(tree = tree, traits = traits, status = FALSE)
 
     # Isolate Output
     cons.nodes <- cons$node
     cons.Nnodes <- dim(cons)[1]
     cons.first <- min(100 - cons$distance)
 
-    return(data.frame(first.obs = obs.first, first.pred = cons.first,
-                nevol.obs = obs.numevol, nevol.pred = cons.Nnodes))
+    return(c(obs.first, cons.first, obs.numevol, cons.Nnodes))
   }
-
-  replicate(n = nsim, expr = try(SimFun(birth, a, b, level)))
+  out <- matrix(NA, nsim, 4)
+  colnames(out) <- c("first.obs", "first.pred", "nevol.obs", "nevol.pred")
+  for (s in 1:nsim){
+    out[s, ] <- try(SimFun(birth, a, b, level))
+  }
+  #replicate(n = nsim, expr = try(SimFun(birth, a, b, level)))
+  return(out)
 }
