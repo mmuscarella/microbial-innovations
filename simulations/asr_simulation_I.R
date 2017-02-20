@@ -41,9 +41,9 @@ simmy$Beta <- test.comb[,2]
 
 # Run Simulaton Across Parameters
 for (i in 1:dim(test.comb)[1]){
-  print(i)
+  print(paste("Running Simulation", i, "of", dim(test.comb)[1]))
   sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2],
-                        nsim = 2)
+                        nsim = 100)
   sim <- as.data.frame(sim)
   simmy$LogL[i] <- mean(sim$LogL)
   simmy$LogL_sem[i] <- sem(sim$LogL)
