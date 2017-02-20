@@ -363,7 +363,7 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  out <- matrix(NA, nsim, 3 + tree$Nnode)
+  out <- matrix(NA, nsim, 3 + 99)
   colnames(out) <- c("Alpha", "Beta", "LogL", 
                      seq(1:tree$Nnode) + length(tree$tip.label))
   for(s in 1:nsim){
