@@ -350,27 +350,30 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
     names(traits) <- temp$traits$OTU
 
     # Run Ancestral State Reconstruction
-    ASR <- fitMC2(phy = tree, x = traits, init.parms = init.parms,
-                  prior = prior, posterior = TRUE)
+    #ASR <- fitMC2(phy = tree, x = traits, init.parms = init.parms,
+    #              prior = prior, posterior = TRUE)
+    
+    ASR <- fitMk(tree, traits, model = "ARD", 
+                 pi = prior, output.liks = TRUE)
 
     # Isolate Output
-    pars <- ASR$fit$par
-    LogL <- ASR$liks$LogL
-    posterior <- ASR$liks$liks
+    pars <- ASR$rates
+    LogL <- ASR$logLik
+    posterior <- ASR$lik.anc
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  out.parameters <- matrix(NA, nsim, 3)
-  colnames(out.parameters) <- c("Alpha", "Beta", "LogL")
-  out.posteriors <- list()
+  out <- matrix(NA, nsim, 3 + tree$Nnode)
+  colnames(out) <- c("Alpha", "Beta", "LogL", 
+                     seq(1:tree$Nnode) + length(tree$tip.label))
   for(s in 1:nsim){
     temp <- try(SimFun(birth, a, b, init.parms, prior))
-    out.parameters[i, 1] <- temp$pars[1]
-    out.parameters[i, 2] <- temp$pars[2]
-    out.parameters[i, 3] <- temp$LogL
-    out.posteriors[[i]] <- temp$posterior
+    out[s, 1] <- temp$pars[1]
+    out[s, 2] <- temp$pars[2]
+    out[s, 3] <- temp$LogL
+    out[s, 4:dim(out)[2]] <- temp$posterior[1]
   }
-  return(list(out.parameters, out.posteriors))
+  return(out)
 }
 
 # Calculate the Trait Conservation and Save Output
