@@ -202,7 +202,7 @@ TraitEvol <- function(birth = 0.2, a = 0.95, b = 0.98){
   trait.evol$distance <- dist.nodes(y.tree)[trait.evol$Offspring, Ntips + 1]
 
   # Calculate Distance for 1st Evolution
-  min.evol <- min(trait.evol$distance)
+  min.evol <- try(min(trait.evol$distance))
 
   return(min.evol)
 }
@@ -288,7 +288,7 @@ TraitEvol2 <- function(birth = 0.2, a = 0.95, b = 0.98){
   trait.evol$distance <- dist.nodes(y.tree)[trait.evol$Offspring, Ntips + 1]
 
   # Calculate Distance for 1st Evolution
-  min.evol <- min(trait.evol$distance)
+  min.evol <- try(min(trait.evol$distance))
 
 
   return(list(tree = y.tree, traits = Obs.Traits, min.evol = min.evol,
@@ -368,10 +368,12 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
                      seq(1:99) + 100)
   for(s in 1:nsim){
     temp <- try(SimFun(birth, a, b, init.parms, prior))
-    out[s, 1] <- temp$pars[1]
-    out[s, 2] <- temp$pars[2]
-    out[s, 3] <- temp$LogL
-    out[s, 4:dim(out)[2]] <- temp$posterior[1]
+    if(is.list(temp)){
+      out[s, 1] <- temp$pars[1]
+      out[s, 2] <- temp$pars[2]
+      out[s, 3] <- temp$LogL
+      out[s, 4:dim(out)[2]] <- temp$posterior[1]
+    }
   }
   return(out)
 }

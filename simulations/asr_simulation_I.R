@@ -19,6 +19,7 @@ library("ape")
 library("geiger")
 library("expm")
 library("MASS")
+library("methods")
 
 # Load Source Functions
 source("../bin/TreeSimulationFxns.R")
