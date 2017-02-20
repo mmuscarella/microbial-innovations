@@ -2,6 +2,7 @@
 require("ape")
 require("phytools")
 require("picante")
+library("methods")
 
 # Load Source Functions
 source("../bin/fitMC.R")
