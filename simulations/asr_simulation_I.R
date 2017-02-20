@@ -30,23 +30,26 @@ test.b <- seq(0.51, 0.99, 0.04)
 test.comb <- expand.grid(test.a, test.b)
 
 # Define Simulation Output
-simmy <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
-                      logl.mean = rep(NA, dim(test.comb)[1]),
-                      logl.sem = rep(NA, dim(test.comb)[1]),
-                      x.mean = rep(NA, dim(test.comb)[1]),
-                      y.mean = rep(NA, dim(test.comb)[1]))
+simmy <- data.frame(matrix(NA, nrow = dim(test.comb)[1],
+                           ncol = 6 + 99))
+
+colnames(simmy) <- c("Alpha", "Beta", "LogL", "LogL_sem", "Mean_X", "Mean_Y",
+                     seq(1:99) + 100)
+
+simmy$Alpha <- test.comb[,1]
+simmy$Beta <- test.comb[,2]
 
 # Run Simulaton Across Parameters
 for (i in 1:dim(test.comb)[1]){
   print(i)
   sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2],
                         nsim = 2)
-  if (is.list(sim)){
-  simmy$logl.mean[i] <- try(mean(sapply(sim[2,], '[')))
-  simmy$logl.sem[i] <- try(sem(sapply(sim[2,], '[')))
-  simmy$x.mean[i] <- try(mean(sapply(sim[1,], '[')[1,]))
-  simmy$y.mean[i] <- try(mean(sapply(sim[1,], '[')[2,]))
-  }
+  sim <- as.data.frame(sim)
+  simmy$LogL[i] <- mean(sim$LogL)
+  simmy$LogL_sem[i] <- sem(sim$LogL)
+  simmy$Mean_X[i] <- mean(sim$Alpha)
+  simmy$Mean_Y[i] <- mean(sim$Beta)
+  simmy[i, 7:dim(simmy)[2]] <- apply(sim[, -c(1:3)], 2, mean)
 }
 
 # Save Simulation Output
