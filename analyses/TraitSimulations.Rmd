@@ -10,6 +10,7 @@ output:
     fig_caption: yes
 ---
 
+# Initial Setup
 ```{r setup, include=FALSE}
 # Knitr Options
 knitr::opts_chunk$set(echo = TRUE)
@@ -32,32 +33,34 @@ library("geiger")
 ```
 
 # Trait Evolution Simulations
-
 ## Basic Trait Evolution Simulation
 ```{r}
-# Plot with Simulation 1 and 2
+# Import Simulation Results (Range of A Or B)
+simA <- read.table("../simulations/output/TraitEvolution_A.txt", header = 1)
+simB <- read.table("../simulations/output/TraitEvolution_B.txt", header = 1)
+
+# Plot Simulation Results
 png(filename="../figures/TraitEvolution_A.png",
     width = 1600, height = 800, res = 96*2)
 
 layout(matrix(1:2, 1, 2))
-layout.show(2)
 
 par(mar = c(4,1,1,1) + 0.5, oma = c(1, 4, 0.5, 0.5))
 
-plot(test1$test.a, test1$sim.mean, las = 1, pch = 16,
+plot(simA$test.a, simA$sim.mean, las = 1, pch = 16,
      xlim = c(0.4, 1.0), ylim = c(5, 60),
      xlab = "Alpha Parameter", ylab = "")
-arrows(test1$test.a, y0 = test1$sim.mean - test1$sim.sem,
-       y1 = test1$sim.mean + test1$sim.sem, length = 0)
+arrows(simA$test.a, y0 = simA$sim.mean - simA$sim.sem,
+       y1 = simA$sim.mean + simA$sim.sem, length = 0)
 legend("topleft", legend = expression(paste(beta, " = 0.90")), 
        bty = "n", xjust = 0, lty = 0, adj = c(0.3, 0.5))
 mtext(side = 2, "Mean 1st Occurrence (time)", cex = 1, line = 3)
 
-plot(test2$test.b, test2$sim.mean, las = 1, pch = 16,
+plot(simB$test.b, simB$sim.mean, las = 1, pch = 16,
      xlim = c(0.4, 1.0), ylim = c(5, 60),
      xlab = "Beta Parameter", ylab = "")
-arrows(test2$test.b, y0 = test2$sim.mean - test2$sim.sem,
-       y1 = test2$sim.mean + test2$sim.sem, length = 0)
+arrows(simB$test.b, y0 = simB$sim.mean - simB$sim.sem,
+       y1 = simB$sim.mean + simB$sim.sem, length = 0)
 legend("topright", legend = expression(paste(alpha, " = 0.90")), 
        bty = "n", xjust = 0, lty = 0)
 
@@ -65,17 +68,34 @@ legend("topright", legend = expression(paste(alpha, " = 0.90")),
 dev.off()
 graphics.off()
 
+# Show Plot
+img <- readPNG("../figures/TraitEvolution_A.png")
+grid.raster(img)
+```
 
-# Simulation A/B
-# Plot Test #3
+```{r}
+# Load Simulation A/B (range A and B)
+simAB <- read.table("../simulations/output/TraitEvolution_AB.txt", header = 1)
+
+simAB[simAB == Inf] <- NA
+
+# Plot 
 png(filename="../figures/TraitEvolution_B.png",
-    width = 1600, height = 800, res = 96*2)
-layout(1)
+    width = 800, height = 800, res = 96*2)
+
 par(mar = c(1, 1, 1, 1), oma = c(0, 0, 0, 0))
 
-l <- length(unique(test3[,1]))
-w <- length(unique(test3[,2]))
-z <- matrix(c(NA, test3[, 3]), nrow = length(test.a), ncol = length(test.b))
+l <- length(unique(simAB[,1]))
+w <- length(unique(simAB[,2]))
+
+simAB[1, 1] == simAB[1, 2]
+simAB[1, 1] == simAB[1 + l, 2]
+simAB[1, 1] == simAB[2, 1]
+simAB[1, 2] == simAB[2, 2]
+# Col 2 (B) stays constant until all values in Col 1 (A) are used
+
+z <- matrix(c(NA, simAB[, 3]), nrow = l, ncol = w, byrow = F)
+
 nrz <- nrow(z)
 ncz <- ncol(z)
 # Create a function interpolating colors in the range of specified colors
@@ -87,35 +107,55 @@ color <- jet.colors(nbcol)
 zfacet <- z[-1, -1] + z[-1, -ncz] + z[-nrz, -1] + z[-nrz, -ncz]
 # Recode facet z-values into color indices
 facetcol <- cut(zfacet, nbcol)
-par(mar = c(2, 2, 2, 2) + 0.5)
-persp(z = z, phi = 15, theta = 300,
+par(mar = c(1, 1, 1, 1) + 0.5)
+persp(z = z, phi = 15, theta = 215,
       zlim = c(0, 75), ticktype = "simple", nticks = 4,
-      xlab = "Alpha", ylab = "Beta", zlab = "Mean 1st Occurence",
+      xlab = "Alpha", ylab = "Beta", zlab = "Mean 1st Occurrence (time)",
       col = color[facetcol], scale = TRUE)
 
 # Close Plot Device
 dev.off()
 graphics.off()
 
+# Show Plot
+img <- readPNG("../figures/TraitEvolution_B.png")
+grid.raster(img)
+```
+
+### Level Plot Version
+```{r}
+# Plot 
+png(filename="../figures/TraitEvolution_B_level.png",
+    width = 900, height = 800, res = 96*2)
+
+par(mar = c(2, 2, 4, 2), oma = c(0, 0, 1, 0))
+
+levelplot(simAB[, 3] ~ simAB[, 1] + simAB[, 2], pretty = T,
+          xlab = "Alpha", ylab = "Beta", main = "Mean 1st Occurrence (time)", 
+          col.regions = color,
+          outer = T, allow.multiple = T)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/TraitEvolution_B_level.png")
+grid.raster(img)
+```
+
+## Flat or Defined Prior for Root Probabilities
+```{r}
+# Import Simulation Results
+sim.flat <- 
+sim.prior <- 
+
+# Plot
 png(filename="../figures/TraitEvolution_C.png",
     width = 1800, height = 800, res = 96*2)
 layout(matrix(1:2, 1, 2))
 
-# How does the likelihood of the root state change with A and B
-test.a <- seq(0.50, 0.95, 0.01)
-test.b <- seq(0.50, 0.95, 0.01)
-test.comb <- expand.grid(test.a, test.b)[-1,]
-
-sim.lik <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
-                               sim.mean = rep(NA, dim(test.comb)[1]),
-                               sim.sem = rep(NA, dim(test.comb)[1]))
-
-for (i in 1:dim(test.comb)[1]){
-  sim <- TraitEvol.sim2(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
-                       nsim = 100)
-  sim.lik$sim.mean[i] <- mean(sim[1, ])
-  #sim.lik$sim.sem[i] <- sem(sim[1, ])
-}
+# No Prior (flat 0.5, 0.5)
 x <- test.a
 y <- test.b
 z <- matrix(sim.lik[, 3], nrow = length(test.a), ncol = length(test.b))
@@ -138,21 +178,7 @@ persp(z = z, phi = 15, theta = 30,
       col = color[facetcol], scale = FALSE)
 
 
-# How does the likelihood of the root state change with A and B (new function)
-test.a <- seq(0.54, 0.95, 0.01)
-test.b <- seq(0.54, 0.95, 0.01)
-test.comb <- expand.grid(test.a, test.b)[-1,]
-
-sim.lik <- data.frame(test.a = test.comb[,1], test.b = test.comb[,2],
-                      sim.mean = rep(NA, dim(test.comb)[1]),
-                      sim.sem = rep(NA, dim(test.comb)[1]))
-
-for (i in 1:dim(test.comb)[1]){
-  sim <- TraitEvol.sim3(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2], 
-                        nsim = 100)
-  sim.lik$sim.mean[i] <- mean(sim[1, ])
-  #sim.lik$sim.sem[i] <- sem(sim[1, ])
-}
+# Defined Prior (0.99, 0.01)
 x <- test.a
 y <- test.b
 z <- matrix(sim.lik[, 3], nrow = length(test.a), ncol = length(test.b))
@@ -182,19 +208,44 @@ graphics.off()
 ```
 
 
-## ConsenTrait Simulations
+# ConsenTrait Simulations
 ```{r}
-CT.sim <- read.delim("../simulations/output/con-trait_simulation.txt", 
+# Import Simulation Results
+CT.sim <- read.delim("../simulations/output/ConsenTraitSimulation.txt", 
                      header = T)
 
+# Plot
+png(filename="../figures/ConsenTraitSimulation.png",
+    width = 1600, height = 800, res = 96*2)
+layout(matrix(1:2, 1, 2))
+par(mar = c(4, 1, 3, 1) + 0.5, oma = c(0, 3, 0, 0))
+plot(CT.sim$first.obs.mean, CT.sim$first.pred.mean,
+     xlab = "", ylab = "", las = 1,
+     xlim = c(0, 80), ylim = c(0,100))
+abline(0, 1, lwd = 1, lty = 2)
+mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
+mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
+mtext(side = 3, text = "First Occurence (Time)", line = 1, cex = 1.25)
+plot(CT.sim$nevol.obs.mean, CT.sim$nevol.pred.mean,
+     xlab = "", ylab = "", las = 1,
+     xlim = c(0, 55), ylim = c(0, 25))
+abline(0, 1, lwd = 1, lty = 2)
+mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
+#mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
+mtext(side = 3, text = "Number of Occurences", line = 1, cex = 1.25)
 
-plot(CT.sim$first.obs.mean, CT.sim$first.pred.mean)
 
-plot(CT.sim$nevol.obs.mean, CT.sim$nevol.pred.mean)
+# Close Plot Device
+dev.off()
+graphics.off()
 
+# Show Plot
+img <- readPNG("../figures/ConsenTraitSimulation.png")
+grid.raster(img)
 
 ```
 
+# Ancestral State Reconstruction Simulations
 
 
 
