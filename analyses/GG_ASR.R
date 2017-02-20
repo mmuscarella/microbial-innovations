@@ -37,6 +37,8 @@ colnames(out) <- c("trait", "LogL", "Rate1", "Rate2",
 
 # Run Ancestral State Reconstruction
 for(i in 1:dim(IMG.trait.PA)[2]){
+  print(paste("Analysing Trait", i, "of", dim(IMG.trait.PA)[2], ":", 
+              colnames(IMG.trait.PA)[i]))
   #temp <- fitMC2(phy = IMG.tree, x = IMG.trait.PA[,i], prior = c(0.999, 0.001), 
   #                  posterior = TRUE)
   temp <- fitMk(IMG.tree, IMG.trait.PA[, 1], model = "ARD", 
@@ -46,7 +48,6 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   out[i,3] <- temp$rates[1]
   out[i,4] <- temp$rates[2]
   out[i,5:dim(out)[2]] <- temp$lik.anc[, 1]
-  return(out)
 }
 
 # Save Output
