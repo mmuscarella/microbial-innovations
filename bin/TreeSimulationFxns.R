@@ -365,7 +365,7 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
   }
   out <- matrix(NA, nsim, 3 + 99)
   colnames(out) <- c("Alpha", "Beta", "LogL", 
-                     seq(1:tree$Nnode) + length(tree$tip.label))
+                     seq(1:99) + 100)
   for(s in 1:nsim){
     temp <- try(SimFun(birth, a, b, init.parms, prior))
     out[s, 1] <- temp$pars[1]
