@@ -340,6 +340,7 @@ TraitEvol.sim3 <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100){
 # Calculate the Posterior Likelihoods and Save Output
 TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
                           init.parms = c(0.5, 0.5), prior = c(0.99, 0.01)){
+  
   SimFun <- function(birth, a, b, init.parms, prior){
 
     # Run Tree and Trait Simulation
@@ -359,7 +360,17 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  replicate(n = nsim, expr = try(SimFun(birth, a, b, init.parms, prior)))
+  out.parameters <- matrix(NA, nsim, 3)
+  colnames(out.parameters) <- c("Alpha", "Beta", "LogL")
+  out.posteriors <- list()
+  for(s in 1:nsim){
+    temp <- try(SimFun(birth, a, b, init.parms, prior))
+    out.parameters[i, 1] <- temp$pars[1]
+    out.parameters[i, 2] <- temp$pars[2]
+    out.parameters[i, 3] <- temp$LogL
+    out.posteriors[[i]] <- temp$posterior
+  }
+  return(list(out.parameters, out.posteriors))
 }
 
 # Calculate the Trait Conservation and Save Output
