@@ -25,16 +25,18 @@ missing <- subset(GG.um$tip.label,
                   !(GG.um$tip.label %in% colnames(IMG.traits)))
 IMG.tree <- drop.tip(GG.um, missing)
 
+root.dists <- as.matrix(dist.nodes(IMG.tree))[,length(IMG.tree$tip.label) + 1]
 
 # Reformat Trait Table
 IMG.trait.tab <- data.frame(t(IMG.traits))
 
 IMG.trait.PA <- (IMG.trait.tab > 0) * 1
 
-out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], 
-                         ncol = 4 + IMG.tree$Nnode))
-colnames(out) <- c("trait", "LogL", "Rate1", "Rate2", 
-                   seq(1:IMG.tree$Nnode) + length(IMG.tree$tip.label))
+out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 8))
+colnames(out) <- c("trait", "LogL", "Rate1", "Rate2", "Lik.Root", 
+                   "First.Evol", "Med.Evol", "N.evol")
+
+states <- c("Off", "On")
 
 # Run Ancestral State Reconstruction
 for(i in 1:dim(IMG.trait.PA)[2]){
@@ -44,11 +46,34 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   #                  posterior = TRUE)
   temp <- fitMk(IMG.tree, IMG.trait.PA[, 1], model = "ARD", 
                 pi = c(0.999, 0.001), output.liks = TRUE)
+  temp.edge <- as.data.frame(IMG.tree$edge)
+  colnames(temp.edge) <- c("Anc", "Des")
+  temp.edge$Len <- IMG.tree$edge.length
+  temp.edge$S.Anc <- NA
+  temp.edge$S.Des <- NA
+  temp.edge$R.Dist <- NA
+  for(j in 1:dim(temp$lik.anc)[1]){
+    temp.state <- sample(states, size = 1, prob = temp$lik.anc[j, ])
+    temp.node <- rownames(temp$lik.anc)[j]
+    temp.edge$S.Anc[which(temp.edge$Anc == temp.node)] <- temp.state
+    temp.edge$S.Des[which(temp.edge$Des == temp.node)] <- temp.state
+  }
+  for(k in 1:dim(temp.edge)[1]){
+    temp.edge$R.Dist[k] <- root.dists[temp.edge$Des[k]]
+  }
+  evol <- temp.edge[which(temp.edge$S.Anc == "Off" & temp.edge$S.Des == "On"), ]
+  first <- min(evol$R.Dist)
+  median <- median(evol$R.Dist)
+  N.evol <- dim(evol)[1]
+  
   out[i,1] <- colnames(IMG.trait.PA)[i]
   out[i,2] <- temp$logLik
   out[i,3] <- temp$rates[1]
   out[i,4] <- temp$rates[2]
-  out[i,5:dim(out)[2]] <- temp$lik.anc[, 1]
+  out[i,5] <- temp$lik.anc[1, 1]
+  out[i,6] <- first
+  out[i,7] <- median
+  out[i,8] <- N.evol
 }
 
 # Save Output
