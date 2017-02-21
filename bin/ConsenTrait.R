@@ -25,7 +25,7 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
   
   root_tree$node.label.old <- root_tree$node.label
   root_tree$node.label <- root_tree$edge[, 1]
-  root_tree$node.label[1] <- root_tree$node.label.old
+  root_tree$node.label[1] <- root_tree$node.label.old[1]
 
   # ID all subtrees
   subtree <- subtrees(root_tree, wait = FALSE)
