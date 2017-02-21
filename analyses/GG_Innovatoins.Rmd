@@ -682,19 +682,21 @@ grid.raster(img)
 # Trait Origins
 head(IMG.Cons)
 
-trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons$trait)), 4))
-colnames(trait.sum) <- c("FirstDate", "MedianDate", "LateDate", "NumEvol")
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons$trait)), 5))
+colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
 
 for (i in 1:length(unique(IMG.Cons$trait))){
-  temp <- IMG.Cons[IMG.Cons$trait == i, ]
+  trait <- unique(IMG.Cons$trait)[i]
+  temp <- IMG.Cons[IMG.Cons$trait == trait, ]
   first.evol <- max(temp$distance)
   med.evol <- median(temp$distance)
   last.evol <- min(temp$distance)
   n.evol <- dim(temp)[1]
-  trait.sum[i, 1] <- first.evol
-  trait.sum[i, 2] <- med.evol
-  trait.sum[i, 3] <- last.evol
-  trait.sum[i, 4] <- n.evol
+  trait.sum[i, 1] <- i
+  trait.sum[i, 2] <- first.evol
+  trait.sum[i, 3] <- med.evol
+  trait.sum[i, 4] <- last.evol
+  trait.sum[i, 5] <- n.evol
 }
 
 trait.sum <- trait.sum[trait.sum$NumEvol > 0, ]
@@ -760,4 +762,51 @@ sum(trait.sum$NumEvol > 1 & trait.sum$NumEvol <= 10)
 
 
 ```
+
+## Trait Types
+```{r}
+
+head(IMG.traits)[, 1:5]
+
+traits <- rownames(IMG.traits)
+trait.num <- rowSums(IMG.traits)
+
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits)))
+
+carb.traits <- c(grep("Glycolysis", traits), grep("Citrate", traits),
+                 grep("Pentose", traits), grep("Fructose", traits),
+                 grep("Galactose", traits), grep("Ascorbate", traits),
+                 grep("sucrose", traits), grep("nucleotide sugar", traits),
+                 grep("Pyruvate", traits), grep("Glyoxylate", traits),
+                 grep("Propanoate", traits), grep("Butanoate", traits),
+                 grep("C5-Branched", traits), grep("Inositol", traits))
+
+transport.traits <- grep("transport", traits)
+
+motility.traits <- c(grep("chemotaxis", traits), grep("motility", traits),
+                     grep("Flagellar", traits))
+
+photo.traits <- c(grep("Photosynthesis", traits))
+traits[photo.traits]
+
+dim(trait.sum)
+dim(IMG.traits)
+
+
+photo.sum <- trait.sum[trait.sum$Trait == photo.traits, ]
+photo.Cons <- IMG.Cons[sum(IMG.Cons$trait %in% photo.traits), ]
+
+unique(IMG.Cons$trait)[photo.traits[1]]
+
+IMG.Cons[IMG.Cons$trait %in% unique(IMG.Cons$trait)[transport.traits], ]
+
+```
+
+
+
+
+
 
