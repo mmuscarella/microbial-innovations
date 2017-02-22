@@ -47,6 +47,15 @@ root.dists <- as.matrix(dist.nodes(IMG.tree))[,length(IMG.tree$tip.label) + 1]
 IMG.trait.tab <- data.frame(t(IMG.traits))
 IMG.trait.PA <- (IMG.trait.tab > 0) * 1
 
+# Identify Traits That All Species Have
+complete <- which(apply(IMG.trait.PA, 2, min) == 1)
+print(paste("The following trait is found in all taxa: ", 
+            names(complete), sep = ""), quote = FALSE)
+print("Those triats have been removed from the analysis", quote = FALSE)
+
+IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+dim(IMG.trait.PA)
+
 out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 8))
 colnames(out) <- c("trait", "LogL", "Rate1", "Rate2", "Lik.Root", 
                    "First.Evol", "Med.Evol", "N.evol")
@@ -129,8 +138,16 @@ root.dists <- as.matrix(dist.nodes(IMG.tree))[,length(IMG.tree$tip.label) + 1]
 
 # Reformat Trait Table
 IMG.trait.tab <- data.frame(t(IMG.traits))
-
 IMG.trait.PA <- (IMG.trait.tab > 0) * 1
+
+# Identify Traits That All Species Have
+complete <- which(apply(IMG.trait.PA, 2, min) == 1)
+print(paste("The following trait is found in all taxa: ", 
+            names(complete), sep = ""), quote = FALSE)
+print("Those triats have been removed from the analysis", quote = FALSE)
+
+IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+dim(IMG.trait.PA)
 
 out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 8))
 colnames(out) <- c("trait", "LogL", "Rate1", "Rate2", "Lik.Root", 
