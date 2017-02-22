@@ -62,9 +62,9 @@ for(i in 1:dim(IMG.trait.PA)[2]){
     temp.edge$R.Dist[k] <- root.dists[temp.edge$Des[k]]
   }
   evol <- temp.edge[which(temp.edge$S.Anc == "Off" & temp.edge$S.Des == "On"), ]
-  first <- min(evol$R.Dist)
-  median <- median(evol$R.Dist)
-  N.evol <- dim(evol)[1]
+  first <- try(min(evol$R.Dist))
+  median <- try(median(evol$R.Dist))
+  N.evol <- try(dim(evol)[1])
   
   out[i,1] <- colnames(IMG.trait.PA)[i]
   out[i,2] <- temp$logLik
