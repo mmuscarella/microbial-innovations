@@ -44,7 +44,7 @@ for(i in 1:dim(IMG.trait.PA)[2]){
               colnames(IMG.trait.PA)[i]))
   #temp <- fitMC2(phy = IMG.tree, x = IMG.trait.PA[,i], prior = c(0.999, 0.001), 
   #                  posterior = TRUE)
-  temp <- fitMk(IMG.tree, IMG.trait.PA[, 1], model = "ARD", 
+  temp <- fitMk(IMG.tree, IMG.trait.PA[, i], model = "ARD", 
                 pi = c(0.999, 0.001), output.liks = TRUE)
   temp.edge <- as.data.frame(IMG.tree$edge)
   colnames(temp.edge) <- c("Anc", "Des")
