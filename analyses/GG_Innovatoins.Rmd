@@ -650,6 +650,8 @@ summary(IMG.Cons$distance)
 
 ```
 
+
+## ConsenTrait Predictions
 ```{r}
 IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
 
@@ -805,8 +807,33 @@ IMG.Cons[IMG.Cons$trait %in% unique(IMG.Cons$trait)[transport.traits], ]
 
 ```
 
+## ASR Results
+```{r}
+IMG.ASR <- read.delim("../data/IMG_ASR.txt")
 
+IMG.ASR <- IMG.ASR[complete.cases(IMG.ASR$First.Evol), ]
 
+plot(log10(IMG.ASR$First.Evol), jitter(IMG.ASR$N.evol),
+     xlab = "", ylab = "", las = 1, 
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "First Date of Conservation")
+
+mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Conservation Points", 
+      line = 2.5, cex = 1)
+
+plot(log10(IMG.ASR$Med.Evol), jitter(IMG.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Median Date of Conservation")
+
+mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Conservation Points", 
+      line = 2.5, cex = 1)
+
+```
 
 
 
