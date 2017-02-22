@@ -146,7 +146,9 @@ print(paste("The following trait is found in all taxa: ",
             names(complete), sep = ""), quote = FALSE)
 print("Those triats have been removed from the analysis", quote = FALSE)
 
-IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+if(length(complete) > 0){
+  IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+}
 dim(IMG.trait.PA)
 
 out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 8))
