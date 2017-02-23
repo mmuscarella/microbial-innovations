@@ -270,6 +270,8 @@ plot(jitter(ASR.sim$Alpha), ASR.sim$pred.Alpha,
      cex = c(2 - 1.5*ASR.sim$Beta),
      col=rgb(0, 0, 1, 0.5), pch=16)
 abline(0, 1, lty = 2)
+mod1 <- lm(ASR.sim$pred.Alpha ~ ASR.sim$Alpha * ASR.sim$Beta)
+mod1
 
 mtext(side = 2, text = "Predicted Value", line = 3)
 
