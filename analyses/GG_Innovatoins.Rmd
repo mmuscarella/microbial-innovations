@@ -638,15 +638,17 @@ rowSums(IMG.traits > 1)
 missing <- subset(GreenTree.um$tip.label, 
                   !(GreenTree.um$tip.label %in% colnames(IMG.traits)))
 
+IMG.tree <- drop.tip(GreenTree.r, missing)
+
+missing <- subset(GreenTree.r$tip.label, 
+                  !(GreenTree.r$tip.label %in% colnames(IMG.traits)))
+
 IMG.tree <- drop.tip(GreenTree.um, missing)
+
 IMG.trait.tab <- data.frame(colnames(IMG.traits), t(IMG.traits))
 
 precal <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, row.names = 1)
 dim(precal)
-
-rowSums(precal) == rowSums(IMG.traits)
-
-summary(IMG.Cons$distance)
 
 ```
 
@@ -683,25 +685,33 @@ grid.raster(img)
 ```{r}
 # Trait Origins
 head(IMG.Cons)
+length(unique(IMG.Cons$trait))
+IMG.Cons2 <- IMG.Cons[-c(which(IMG.Cons$node == "Root")), ]
 
-trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons$trait)), 5))
+traits <- unique(rownames(IMG.traits[rowSums(IMG.traits) > 10, ]))
+length(traits)
+
+IMG.Cons2$distance2 <- max(IMG.Cons2$distance) - IMG.Cons2$distance
+
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons2$trait)), 5))
 colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
 
-for (i in 1:length(unique(IMG.Cons$trait))){
-  trait <- unique(IMG.Cons$trait)[i]
-  temp <- IMG.Cons[IMG.Cons$trait == trait, ]
-  first.evol <- max(temp$distance)
-  med.evol <- median(temp$distance)
-  last.evol <- min(temp$distance)
+for (i in 1:length(unique(IMG.Cons2$trait))){
+  trait <- unique(IMG.Cons2$trait)[i]
+  temp <- IMG.Cons2[IMG.Cons2$trait == trait, ]
+  
+  yearly.evol <- quantile(temp$distance2)[2]
+  med.evol <- quantile(temp$distance2)[3]
+  late.evol <- quantile(temp$distance2)[4]
   n.evol <- dim(temp)[1]
-  trait.sum[i, 1] <- i
-  trait.sum[i, 2] <- first.evol
+  trait.sum[i, 1] <- traits[i]
+  trait.sum[i, 2] <- yearly.evol
   trait.sum[i, 3] <- med.evol
-  trait.sum[i, 4] <- last.evol
+  trait.sum[i, 4] <- late.evol
   trait.sum[i, 5] <- n.evol
 }
 
-trait.sum <- trait.sum[trait.sum$NumEvol > 0, ]
+trait.sum.Con <- trait.sum[trait.sum$NumEvol > 0, ]
 
 png(filename="../figures/GG_TraitConservationDates.png",
       width = 1800, height = 600, res = 96*2)
@@ -710,34 +720,34 @@ png(filename="../figures/GG_TraitConservationDates.png",
 layout(matrix(1:3, ncol = 3))
 par(mar = c(4, 4, 2, 1), oma = c(1, 1, 1, 1))
 
-plot(log10(trait.sum$FirstDate), jitter(trait.sum$NumEvol),
+plot((trait.sum.Con$FirstDate), jitter(trait.sum.Con$NumEvol),
      xlab = "", ylab = "", las = 1, ylim = c(0, 80),
      col=rgb(0, 0, 1, 0.5), pch=16,
-     main = "First Date of Conservation")
+     main = "Early Points of Conservation")
 
-mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+mtext(side = 1, text = expression(paste("Time")), 
       line = 3, cex = 1)
 mtext(side = 2, text = "Conservation Points", 
       line = 2.5, cex = 1)
 
-plot(log10(trait.sum$MedianDate), jitter(trait.sum$NumEvol),
+plot((trait.sum.Con$MedianDate), jitter(trait.sum.Con$NumEvol),
      xlab = "", ylab = "", las = 1, ylim = c(0, 80),
      col=rgb(0, 0, 1, 0.5), pch=16,
-     main = "Median Date of Conservation")
+     main = "Intermediate Points of Conservation")
 
-mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+mtext(side = 1, text = expression(paste("Time")), 
       line = 3, cex = 1)
 mtext(side = 2, text = "Conservation Points", 
       line = 2.5, cex = 1)
 
 
 
-plot(log10(trait.sum$LateDate), jitter(trait.sum$NumEvol),
+plot((trait.sum.Con$LateDate), jitter(trait.sum.Con$NumEvol),
      xlab = "", ylab = "", las = 1, ylim = c(0, 80),
      col=rgb(0, 0, 1, 0.5), pch=16,
-     main = "Latest Date of Conservation")
+     main = "Late Points of Conservation")
 
-mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
+mtext(side = 1, text = expression(paste("Time")), 
       line = 3, cex = 1)
 mtext(side = 2, text = "Conservation Points", 
       line = 2.5, cex = 1)
@@ -753,17 +763,363 @@ img <- readPNG("../figures/GG_TraitConservationDates.png")
 grid.raster(img)
 ```
 
+## ASR Results
 ```{r}
-trait.sum
+IMG.ASR <- read.delim("../data/IMG_ASR_long.txt")
 
-dim(trait.sum)[1]
-sum(trait.sum$NumEvol == 1)
-sum(trait.sum$NumEvol > 10)
-sum(trait.sum$NumEvol > 1 & trait.sum$NumEvol <= 10)
+IMG.ASR <- IMG.ASR[complete.cases(IMG.ASR$R.Dist), ]
+
+traits <- gsub("\\.", " ", unique(IMG.ASR$Trait))
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.ASR$Trait)), 5))
+colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
+
+for(i in 1:length(traits)){
+  trait <- traits[i]
+  temp <- IMG.ASR[which(gsub("\\.", " ", IMG.ASR$Trait) == trait), ]
+  
+  yearly.evol <- quantile(temp$R.Dist)[2]
+  med.evol <- quantile(temp$R.Dist)[3]
+  late.evol <- quantile(temp$R.Dist)[4]
+  n.evol <- dim(temp)[1]
+  trait.sum[i, 1] <- traits[i]
+  trait.sum[i, 2] <- yearly.evol
+  trait.sum[i, 3] <- med.evol
+  trait.sum[i, 4] <- late.evol
+  trait.sum[i, 5] <- n.evol
+}
+
+trait.sum.ASR <- trait.sum[which(trait.sum$NumEvol > 0), ]
+
+png(filename="../figures/GG_TraitASRDates.png",
+      width = 1800, height = 600, res = 96*2)
+
+layout(matrix(1:3, ncol = 3))
+par(mar = c(4, 4, 2, 1), oma = c(1, 1, 1, 1))
+
+plot(jitter(trait.sum.ASR$FirstDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Early Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 2.5, cex = 1)
+
+plot(jitter(trait.sum.ASR$MedianDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Intermediate Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 2.5, cex = 1)
 
 
+
+plot(jitter(trait.sum.ASR$LateDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Late Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 2.5, cex = 1)
+
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitASRDates.png")
+grid.raster(img)
+```
+
+## Differences in Median Evolution Date
+```{r}
+traits <- rownames(IMG.traits)
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits)))
+comm.traits <- intersect(trait.sum.ASR$Trait, trait.sum.Con$Trait)
+
+comm.traits2 <- setdiff(comm.traits, traits[disease])
+
+ASR.traits <- trait.sum.ASR[which(trait.sum.ASR$Trait %in% comm.traits2), ]
+Con.traits <- trait.sum.Con[which(trait.sum.Con$Trait %in% comm.traits2), ]
+
+plot(jitter(4000 - ASR.traits$MedianDate), jitter(4000 - Con.traits$MedianDate),
+     xlim = c(0, 4000), ylim = c(0, 4000))
+abline(0, 1, lty = 2)
+
+sum(ASR.traits$MedianDate > 1000)
+sum(ASR.traits$MedianDate < 1000)
+
+sum(Con.traits$MedianDate > 500)
+sum(Con.traits$MedianDate < 500)
+
+Con.traits$Trait[Con.traits$MedianDate > 500]
+```
+
+## Phylogenetic Patterns ConsenTrait
+```{r}
+IMG.tree$node.label
+Ntips <- length(IMG.tree$tip.label)
+max(dist.nodes(IMG.tree)[,1])/2
+
+full <- IMG.tree$edge.length[IMG.tree$edge[,2] > length(IMG.tree$tip.label)]
+to.des <- full[which(IMG.tree$edge[,2] %in% (as.numeric(IMG.Cons2$node) + Ntips))]
+from.des <- full[which(IMG.tree$edge[,1] %in% (as.numeric(IMG.Cons2$node) + Ntips))]
+
+to.anc <- full[which(IMG.tree$edge[,2] %in% which(IMG.tree$edge[, 2] %in% 
+                                      (as.numeric(IMG.Cons2$node) + Ntips)))]
+
+
+par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+
+main <- hist(log10(full), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = "gray", breaks = 20)
+
+
+axis(1, at = c(-1, 0, 1, 2, 3, 4), 
+     labels = expression(10^-1, 1, 10^1, 10^2, 10^3, 10^4),  
+     las = 1, lwd = 1.5)
+axis(2, labels = T, las = 1, lwd = 1.5)
+
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
+
+hist(log10(from.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(0, 0, 1, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 0, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.anc), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 1, 1), add = T, breaks = main$breaks)
+
+ratios <- rep(NA, length(IMG.Cons2$node))
+
+for (i in 1:length(as.numeric(IMG.Cons2$node) + Ntips)){
+  x <- (as.numeric(IMG.Cons2$node) + Ntips)[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+trait.ratios <- data.frame(Trait = IMG.Cons2$trait, Distance = IMG.Cons2$distance2,
+                           Ratio = ratios)
+
+plot(Ratio ~ Distance, data = trait.ratios)
+abline(h = 0.5, lty = 2)
+
+
+by.trait <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = mean)
+by.trait.sem <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = sem)
+
+by.trait <- by.trait[order(as.numeric(by.trait$Ratio)), ]
+by.trait.sem <- by.trait.sem[order(as.numeric(by.trait$Ratio)), ]
+
+plot(by.trait$Ratio, ylab = "Ratio (D/U+D)")
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio +
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio -
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+abline(h = 0.5, lty = 2)
 
 ```
+
+## Phylogenetic Patterns ASR
+```{r}
+full <- IMG.tree$edge.length[IMG.tree$edge[,2] > length(IMG.tree$tip.label)]
+to.anc <- full[unique(which(IMG.tree$edge[,2] %in% unique(IMG.ASR$Anc)))]
+from.anc <- full[unique(which(IMG.tree$edge[,1] %in% unique(IMG.ASR$Anc)))]
+
+to.des <- full[unique(which(IMG.tree$edge[,2] %in% unique(IMG.ASR$Des)))]
+from.des <- full[unique(which(IMG.tree$edge[,1] %in% unique(IMG.ASR$Des)))]
+
+
+
+par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+
+main <- hist(log10(full), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = "gray", breaks = 20)
+
+
+axis(1, at = c(-1, 0, 1, 2, 3, 4), 
+     labels = expression(10^-1, 1, 10^1, 10^2, 10^3, 10^4),  
+     las = 1, lwd = 1.5)
+axis(2, labels = T, las = 1, lwd = 1.5)
+
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
+
+hist(log10(from.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(0, 0, 1, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 0, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.anc), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 1, 1), add = T, breaks = main$breaks)
+
+
+
+
+ratios <- rep(NA, dim(IMG.ASR)[1])
+
+for (i in 1:length(ratios)){
+  x <- IMG.ASR$Des[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+trait.ratios <- data.frame(Trait = IMG.ASR$Trait, Distance = IMG.ASR$R.Dist,
+                           Ratio = ratios)
+
+plot(Ratio ~ Distance, data = trait.ratios)
+abline(h = 0.5, lty = 2)
+
+
+by.trait <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = mean)
+by.trait.sem <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = sem)
+
+by.trait <- by.trait[order(as.numeric(by.trait$Ratio)), ]
+by.trait.sem <- by.trait.sem[order(as.numeric(by.trait$Ratio)), ]
+
+plot(by.trait$Ratio, ylab = "Ratio (D/U+D)")
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio +
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio -
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+abline(h = 0.5, lty = 2)
+
+```
+
+# Null Expectation
+```{r}
+
+rands <- sample(IMG.tree$edge[,1], 100)
+
+ratios <- rep(NA, 100)
+
+for (i in 1:length(ratios)){
+  x <- rands[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+mean(ratios)
+sem(ratios)
+
+Nnodes <- IMG.tree$Nnode
+Ntips <- length(IMG.tree$tip.label)
+
+ratios <- rep(NA, Nnodes - 1)
+
+for(i in 2:Nnodes){
+  x <- Ntips + i
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+  names(ratios)[i - 1] <- x
+}
+
+plot(sort(ratios))
+ratios2 <- ratios[order(as.numeric(names(ratios)))][-1]
+d.node <- dist.nodes(IMG.tree)[seq(Ntips + 2, Nnodes + Ntips), Ntips + 1]
+length(ratios2)
+length(d.node)
+plot(ratios2 ~ d.node, ylab = "Ratio (D/U+D)", xlab = "Time",
+          ylim = c(0,1), las = 1)
+
+mod <- lm(ratios2 ~ d.node)
+abline(mod)
+
+
+ratios <- data.frame(ratio = vector(), node = vector())
+
+for(i in 2:Nnodes){
+  x <- Ntips + i
+  down <- IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)]
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratio <- down/(up + down)
+  node <- rep(x, length(ratio))
+  ratios <- rbind(ratios, cbind(ratio, node))
+}
+
+plot(sort(ratios$ratio))
+d.node <- dist.nodes(IMG.tree)[seq(Ntips + 2, Nnodes + Ntips), Ntips + 1]
+ratios$d.node <- NA
+
+for(i in 1:dim(ratios)[1]){
+  node.temp <- ratios$node[i]
+  d.temp <- d.node[which(as.numeric(names(d.node)) == node.temp)]
+  ratios$d.node[i] <- d.temp
+}
+
+plot(ratios$ratio ~ ratios$d.node, ylab = "Ratio (D/U+D)", xlab = "Time",
+          ylim = c(0,1), las = 1)
+
+mod <- lm(ratios$ratio ~ ratios$d.node)
+abline(mod)
+
+```
+
+## Rate Predictions
+```{r}
+IMG.ASR.r <- read.delim("../data/IMG_ASR.txt")
+
+source("../bin/TreeSimulationFxns.R")
+
+IMG.ASR.r$Alpha <- NA; IMG.ASR.r$Beta <- NA
+
+for(i in 1:dim(IMG.ASR.r)[1]){
+  temp <- unlist(xy_to_ab(x = -IMG.ASR.r$Rate1[i], y = -IMG.ASR.r$Rate2[i]))
+  IMG.ASR.r[i, ]$Alpha <- (1 - temp[1])
+  IMG.ASR.r[i, ]$Beta <- (1 - temp[2])
+}
+
+plot(IMG.ASR.r$Alpha)
+plot(IMG.ASR.r$Beta)
+
+
+
+plot(IMG.ASR.r$Alpha, IMG.ASR.r$Beta, xlim = c(0, 0.01))
+abline(0, 1)
+```
+
+
+
 
 ## Trait Types
 ```{r}
@@ -785,6 +1141,7 @@ carb.traits <- c(grep("Glycolysis", traits), grep("Citrate", traits),
                  grep("Pyruvate", traits), grep("Glyoxylate", traits),
                  grep("Propanoate", traits), grep("Butanoate", traits),
                  grep("C5-Branched", traits), grep("Inositol", traits))
+traits[carb.traits]
 
 transport.traits <- grep("transport", traits)
 
@@ -805,35 +1162,30 @@ unique(IMG.Cons$trait)[photo.traits[1]]
 
 IMG.Cons[IMG.Cons$trait %in% unique(IMG.Cons$trait)[transport.traits], ]
 
-```
 
-## ASR Results
-```{r}
-IMG.ASR <- read.delim("../data/IMG_ASR.txt")
+carb.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[carb.traits], ]
+photo.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[photo.traits], ]
 
-IMG.ASR <- IMG.ASR[complete.cases(IMG.ASR$First.Evol), ]
+motil.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[motility.traits], ]
 
-plot(log10(IMG.ASR$First.Evol), jitter(IMG.ASR$N.evol),
-     xlab = "", ylab = "", las = 1, 
-     col=rgb(0, 0, 1, 0.5), pch=16,
-     main = "First Date of Conservation")
+round(mean(carb.ASR$Rate1), 5)
+round(mean(motil.ASR$Rate1), 5)
 
-mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
-      line = 3, cex = 1)
-mtext(side = 2, text = "Conservation Points", 
-      line = 2.5, cex = 1)
+mean(carb.ASR$Alpha)
+mean(motil.ASR$Alpha) / mean(photo.ASR$Alpha)
 
-plot(log10(IMG.ASR$Med.Evol), jitter(IMG.ASR$NumEvol),
-     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
-     col=rgb(0, 0, 1, 0.5), pch=16,
-     main = "Median Date of Conservation")
+mean(carb.ASR$Rate2)
+mean(motil.ASR$Rate2)
 
-mtext(side = 1, text = expression(paste("Date (log"[10], ")")), 
-      line = 3, cex = 1)
-mtext(side = 2, text = "Conservation Points", 
-      line = 2.5, cex = 1)
+
+carb.ratios <- trait.ratios[gsub("\\.", " ", trait.ratios$Trait) %in% traits[carb.traits], ]
+motil.ratios <- trait.ratios[gsub("\\.", " ", trait.ratios$Trait) %in% traits[motility.traits], ]
+
+
+aggregate(carb.ratios$Ratio ~ carb.ratios$Trait, FUN = mean)
+
+aggregate(motil.ratios$Ratio ~ motil.ratios$Trait, FUN = mean)
+
+aggregate(trait.ratios$Ratio ~ trait.ratios$Trait, FUN = mean)
 
 ```
-
-
-
