@@ -221,14 +221,16 @@ layout(matrix(1:2, 1, 2))
 par(mar = c(4, 1, 3, 1) + 0.5, oma = c(0, 3, 0, 0))
 plot(CT.sim$first.obs.mean, CT.sim$first.pred.mean,
      xlab = "", ylab = "", las = 1,
-     xlim = c(0, 80), ylim = c(0,100))
+     xlim = c(0, 80), ylim = c(0,100),
+     col=rgb(0, 0, 1, 0.5), pch=16)
 abline(0, 1, lwd = 1, lty = 2)
 mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
 mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
 mtext(side = 3, text = "First Occurence (Time)", line = 1, cex = 1.25)
 plot(CT.sim$nevol.obs.mean, CT.sim$nevol.pred.mean,
      xlab = "", ylab = "", las = 1,
-     xlim = c(0, 55), ylim = c(0, 25))
+     xlim = c(0, 55), ylim = c(0, 25),
+     col=rgb(0, 0, 1, 0.5), pch=16)
 abline(0, 1, lwd = 1, lty = 2)
 mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
 #mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
@@ -261,14 +263,19 @@ for(i in 1:dim(ASR.sim)[1]){
   ASR.sim[i, ]$pred.Beta <- (1 - temp[2])
 }
 
-layout(matrix(1:2, ncol = 2))
-par(mar = c(4, 2, 1, 1), oma = c(1, 3, 0, 0))
+# Plot
+png(filename="../figures/ASRSimulation_MC.png",
+    width = 1600, height = 800, res = 96*2)
+layout(matrix(1:2, 1, 2))
+par(mar = c(4, 1, 3, 1) + 0.5, oma = c(0, 3, 0, 0))
 
 plot(jitter(ASR.sim$Alpha), ASR.sim$pred.Alpha,
      xlim = c(0.5, 1), ylim = c(0, 1), las = 1,
-     xlab = "True Value (Alpha)", ylab = "",
+     xlab = "True Value", ylab = "",
      cex = c(2 - 1.5*ASR.sim$Beta),
      col=rgb(0, 0, 1, 0.5), pch=16)
+legend("topleft", "Size rev. scaled by beta", bty = "n")
+mtext(side = 3, text = "Prediction: Alpha Parameter", line = 1, cex = 1.25)
 abline(0, 1, lty = 2)
 mod1 <- lm(ASR.sim$pred.Alpha ~ ASR.sim$Alpha * ASR.sim$Beta)
 mod1
@@ -277,10 +284,63 @@ mtext(side = 2, text = "Predicted Value", line = 3)
 
 plot(jitter(ASR.sim$Beta), ASR.sim$pred.Beta,
      xlim = c(0.5, 1), ylim = c(0, 1), las = 1,
-     xlab = "True Value (Beta)", 
+     xlab = "True Value", 
      cex = c(2 - 1.5*ASR.sim$Alpha),
      col=rgb(0, 0, 1, 0.5), pch=16)
+mtext(side = 3, text = "Prediction: Beta Parameter", line = 1, cex = 1.25)
+
+legend("topleft", "Size rev. scaled by alpha", bty = "n")
 abline(0, 1, lty = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/ASRSimulation_MC.png")
+grid.raster(img)
+```
+
+```{r}
+# Plot
+png(filename="../figures/ASRTraitSimulation.png",
+    width = 1600, height = 800, res = 96*2)
+layout(matrix(1:2, 1, 2))
+par(mar = c(4, 1, 3, 1) + 0.5, oma = c(0, 3, 0, 0))
+plot(CT.sim$first.obs.mean, CT.sim$first.pred.mean,
+     xlab = "", ylab = "", las = 1,
+     xlim = c(0, 80), ylim = c(0,100),
+     col=rgb(0, 0, 1, 0.5), pch=16)
+abline(0, 1, lwd = 1, lty = 2)
+mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
+mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
+mtext(side = 3, text = "First Occurence (Time)", line = 1, cex = 1.25)
+plot(CT.sim$nevol.obs.mean, CT.sim$nevol.pred.mean,
+     xlab = "", ylab = "", las = 1,
+     xlim = c(0, 55), ylim = c(0, 25),
+     col=rgb(0, 0, 1, 0.5), pch=16)
+abline(0, 1, lwd = 1, lty = 2)
+mtext(side = 1, text = "Observed", line = 2.5, cex = 1.25)
+#mtext(side = 2, text = "Predicted", line = 2.5, outer = F, cex = 1.25)
+mtext(side = 3, text = "Number of Occurences", line = 1, cex = 1.25)
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/ASRTraitSimulation.png")
+grid.raster(img)
+
+```
+
+
+
+
+
+
+```{r}
 
 plot(ASR.sim$Alpha, ASR.sim$LogL,
      xlim = c(0.4, 1), ylim = c(-80, 0), las = 1,
@@ -293,7 +353,9 @@ plot(ASR.sim$Beta, ASR.sim$LogL,
      xlab = "Simulation Beta Parameter", ylab = "Log Likelihood",
           cex = c(2 - 1.5*ASR.sim$Alpha),
      col=rgb(0, 0, 1, 0.5), pch=16)
+```
 
+```{r}
 
 # Surface Plot
 x <- sort(unique(ASR.sim$Alpha))
@@ -327,7 +389,7 @@ persp(z = z, phi = 15, theta = 300,
 
 
 
-hist(ASR.sim$LogL)
+#hist(ASR.sim$LogL)
 
 
 
