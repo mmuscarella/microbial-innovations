@@ -35,7 +35,7 @@ fitMC <- function(x, phy, ip = 0.5){
   # Define Rate Matrix
   rate <- matrix(NA, nl, nl)
   np <- nl * (nl - 1)
-  rate[col(rate) != row(rate)] <- 1:np
+  rate[col(rate) != row(rate)] <- np:1
   index.matrix <- rate
   tmp <- cbind(1:nl, 1:nl)
   index.matrix[tmp] <- NA
@@ -122,7 +122,7 @@ fitMC2 <- function(phy, x, init.parms = c(0.5, 0.5),
   # Define Rate Matrix
   rate <- matrix(NA, nl, nl)
   np <- nl * (nl - 1)
-  rate[col(rate) != row(rate)] <- 1:np
+  rate[col(rate) != row(rate)] <- np:1
   index.matrix <- rate
   tmp <- cbind(1:nl, 1:nl)
   index.matrix[tmp] <- NA
@@ -199,7 +199,7 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
   else opt.method <- "nlminb"
   if (hasArg(min.q))
     min.q <- list(...)$min.q
-  else min.q <- 1e-12
+  else min.q <- 1e-50
   N <- Ntip(tree)
   M <- tree$Nnode
   if (is.matrix(x)) {
@@ -236,7 +236,7 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
       }
       else if (model == "ARD") {
         k <- m * (m - 1)
-        rate[col(rate) != row(rate)] <- 1:k
+        rate[col(rate) != row(rate)] <- k:1
       }
       else if (model == "SYM") {
         k <- m * (m - 1)/2
@@ -303,7 +303,7 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
       fit <- optim(q.init, function(p) lik(p, pi = pi),
                    method = "L-BFGS-B", lower = rep(min.q, k))
     else fit <- nlminb(q.init, function(p) lik(p, pi = pi),
-                       lower = rep(0, k), upper = rep(1e+50, k))
+                       lower = rep(01e-50, k), upper = rep(1e+50, k))
     obj <- list(logLik = if (opt.method == "optim") -fit$value else -fit$objective,
                 rates = fit$par, index.matrix = index.matrix, states = states,
                 pi = pi, method = opt.method)
@@ -313,8 +313,10 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
   else {
     fit <- lik(Q[sapply(1:k, function(x, y) which(x == y),
                         index.matrix)], pi = pi)
-    obj <- list(logLik = -fit, rates = Q[sapply(1:k, function(x,
-                                                              y) which(x == y), index.matrix)], index.matrix = index.matrix,
+    obj <- list(logLik = -fit, 
+                rates = Q[sapply(1:k, 
+                                 function(x, y) which(x == y), 
+                                 index.matrix)], index.matrix = index.matrix,
                 states = states, pi = pi)
     if (output.liks)
       obj$lik.anc <- lik(obj$rates, TRUE, pi = pi)
