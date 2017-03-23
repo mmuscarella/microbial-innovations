@@ -258,9 +258,9 @@ source("../bin/TreeSimulationFxns.R")
 ASR.sim$pred.Alpha <- NA; ASR.sim$pred.Beta <- NA
 
 for(i in 1:dim(ASR.sim)[1]){
-  temp <- unlist(xy_to_ab(x = -ASR.sim$Mean_X[i], y = -ASR.sim$Mean_Y[i]))
-  ASR.sim[i, ]$pred.Alpha <- (1 - temp[1])
-  ASR.sim[i, ]$pred.Beta <- (1 - temp[2])
+  temp <- unlist(xy_to_ab(x = ASR.sim$Mean_X[i], y = ASR.sim$Mean_Y[i]))
+  ASR.sim[i, ]$pred.Alpha <- (temp[1])
+  ASR.sim[i, ]$pred.Beta <- (temp[2])
 }
 
 # Plot

@@ -83,7 +83,7 @@ median(mc.test[, 2])
 library(MASS)
 k <- kde2d(mc.test[, 1], mc.test[, 2], n=200, 
            lims = c(c(-0.4, 0), c(-0.6, -0.2)))
-image(k, xlab = "Alpha Rate", ylab = "Beta Rate", las = 1)
+image(k, xlab = "X Rate", ylab = "Y Rate", las = 1)
 points(mc.test[, 1], mc.test[, 2], pch = 16, cex = 0.5)
 points(-0.2, -0.4, pch = 16, col = "blue", cex = 1.5)
 

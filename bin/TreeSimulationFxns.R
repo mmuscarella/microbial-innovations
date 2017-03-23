@@ -542,10 +542,10 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
   SimFun <- function(birth, a, b, init.parms, prior){
 
     # Run Tree and Trait Simulation
-    temp <- TraitEvol2(birth, a, b)
+    temp <- TT.sim(birth, a, b, tips = 1000)
     tree <- temp$tree
-    traits <- temp$traits$Traits
-    names(traits) <- temp$traits$OTU
+    traits <- temp$traits
+    #names(traits) <- temp$traits$OTU
 
     # Run Ancestral State Reconstruction
     #ASR <- fitMC2(phy = tree, x = traits, init.parms = init.parms,
@@ -555,15 +555,15 @@ TraitEvolASR.Sim <- function(birth = 0.2, a = 0.95, b = 0.98, nsim = 100,
                  pi = prior, output.liks = TRUE)
 
     # Isolate Output
-    pars <- ASR$rates
+    pars <- -ASR$rates
     LogL <- ASR$logLik
     posterior <- ASR$lik.anc
 
     return(list(pars = pars, LogL = LogL, posterior = posterior))
   }
-  out <- matrix(NA, nsim, 3 + 99)
-  colnames(out) <- c("Alpha", "Beta", "LogL", 
-                     seq(1:99) + 100)
+  out <- matrix(NA, nsim, 3 + 999)
+  colnames(out) <- c("X", "Y", "LogL", 
+                     seq(1:999) + 1000)
   for(s in 1:nsim){
     temp <- try(SimFun(birth, a, b, init.parms, prior))
     if(is.list(temp)){
