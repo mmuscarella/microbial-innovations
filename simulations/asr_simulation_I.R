@@ -26,8 +26,8 @@ source("../bin/TreeSimulationFxns.R")
 source("../bin/fitMC.R")
 
 # Define Trait Evolution Parameters
-test.a <- seq(0.51, 0.99, 0.04)
-test.b <- seq(0.51, 0.99, 0.04)
+test.a <- seq(0.81, 0.99, 0.04)
+test.b <- seq(0.81, 0.99, 0.04)
 test.comb <- expand.grid(test.a, test.b)
 
 # Define Simulation Output
@@ -44,12 +44,12 @@ simmy$Beta <- test.comb[,2]
 for (i in 1:dim(test.comb)[1]){
   print(paste("Running Simulation", i, "of", dim(test.comb)[1]))
   sim <- TraitEvolASR.Sim(birth = 0.2, a = test.comb[i, 1], b = test.comb[i, 2],
-                        nsim = 100)
+                        nsim = 10)
   sim <- as.data.frame(sim)
   simmy$LogL[i] <- mean(sim$LogL)
   simmy$LogL_sem[i] <- sem(sim$LogL)
-  simmy$Mean_X[i] <- mean(sim$Alpha)
-  simmy$Mean_Y[i] <- mean(sim$Beta)
+  simmy$Mean_X[i] <- mean(sim$X)
+  simmy$Mean_Y[i] <- mean(sim$Y)
   simmy[i, 7:dim(simmy)[2]] <- apply(sim[, -c(1:3)], 2, mean)
 }
 
