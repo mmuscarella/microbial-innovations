@@ -82,7 +82,7 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   temp.edge$S.Des <- NA
   temp.edge$R.Dist <- NA
   for(j in 1:dim(temp$lik.anc)[1]){
-    temp.state <- sample(states, size = 1, prob = temp$lik.anc[j, ])
+    temp.state <- sample(states, size = 1, prob = abs(temp$lik.anc[j, ]))
     temp.node <- rownames(temp$lik.anc)[j]
     temp.edge$S.Anc[which(temp.edge$Anc == temp.node)] <- temp.state
     temp.edge$S.Des[which(temp.edge$Des == temp.node)] <- temp.state
