@@ -97,8 +97,8 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   
   out[i,1] <- colnames(IMG.trait.PA)[i]
   out[i,2] <- temp$logLik
-  out[i,3] <- temp$rates[1]
-  out[i,4] <- temp$rates[2]
+  out[i,3] <- -temp$rates[1]
+  out[i,4] <- -temp$rates[2]
   out[i,5] <- temp$lik.anc[1, 1]
   out[i,6] <- first
   out[i,7] <- median
