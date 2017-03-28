@@ -130,8 +130,8 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   dates.origins <- try(toString(evol$R.Dist[which(evol$Des %in% origins)], collapse = ","))
   
   out[i,1] <- colnames(IMG.trait.PA)[i]
-  out[i,2] <- temp$rates[1]
-  out[i,3] <- temp$rates[2]
+  out[i,2] <- -temp$rates[1]
+  out[i,3] <- -temp$rates[2]
   out[i,4] <- temp$logLik
   out[i,5] <- temp$lik.anc[1, 1]
   out[i,6] <- first
@@ -263,8 +263,8 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   N.evol <- try(dim(evol)[1])
   
   out[i,1] <- colnames(IMG.trait.PA)[i]
-  out[i,2] <- temp$rates[1]
-  out[i,3] <- temp$rates[2]
+  out[i,2] <- -temp$rates[1]
+  out[i,3] <- -temp$rates[2]
   out[i,4] <- temp$logLik
   out[i,5] <- temp$lik.anc[1, 1]
   out[i,6] <- first
