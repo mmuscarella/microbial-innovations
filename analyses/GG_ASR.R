@@ -196,7 +196,7 @@ if(length(complete) > 0){
 }
 dim(IMG.trait.PA)
 
-out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 8))
+out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 11))
 colnames(out) <- c("trait", "Rate1", "Rate2", "LogL", "Lik.Root", 
                    "First.Evol", "Med.Evol", "N.evol", "N.origins",
                    "Origins", "Dates.Origins")
@@ -261,6 +261,9 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   first <- try(min(evol$R.Dist))
   median <- try(median(evol$R.Dist))
   N.evol <- try(dim(evol)[1])
+  N.origins <- try(length(origins))
+  name.origins <- try(toString(origins, collapse = ", "))
+  dates.origins <- try(toString(evol$R.Dist[which(evol$Des %in% origins)], collapse = ","))
   
   out[i,1] <- colnames(IMG.trait.PA)[i]
   out[i,2] <- -temp$rates[1]
@@ -273,6 +276,10 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   out[i,9] <- N.origins
   out[i,10] <- name.origins
   out[i,11] <- dates.origins
+  
+  cat(unlist(out[i, ]), file = "../data/IMG_ASR_PathwaysTemp.csv", sep = "; ",
+      append = T)
+  cat(file = "../data/IMG_ASR_PathwaysTemp.csv", append = T, fill = T)
   
   trait <- colnames(IMG.trait.PA)[i]
   evol.2 <- data.frame(Trait = rep(trait, dim(evol)[1]), evol)
