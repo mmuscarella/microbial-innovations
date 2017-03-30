@@ -277,9 +277,9 @@ for(i in 1:dim(IMG.trait.PA)[2]){
   out[i,10] <- name.origins
   out[i,11] <- dates.origins
   
-  cat(unlist(out[i, ]), file = "../data/IMG_ASR_PathwaysTemp.csv", sep = "; ",
+  cat(unlist(out[i, ]), file = "../data/IMG_ASR_GenesTemp.csv", sep = "; ",
       append = T)
-  cat(file = "../data/IMG_ASR_PathwaysTemp.csv", append = T, fill = T)
+  cat(file = "../data/IMG_ASR_GenesTemp.csv", append = T, fill = T)
   
   trait <- colnames(IMG.trait.PA)[i]
   evol.2 <- data.frame(Trait = rep(trait, dim(evol)[1]), evol)
