@@ -798,6 +798,215 @@ img <- readPNG("../figures/GG_TraitConservationDates.png")
 grid.raster(img)
 ```
 
+## ConsenTrait Dates
+```{r}
+traits
+length(traits)
+IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
+length(unique(IMG.Cons$trait))
+
+traits <- rownames(IMG.traits)
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits), grep("muscle", traits),
+                 grep("trypanosomiasis", traits), grep("Calcium", traits),
+                 grep("myocarditis", traits)))
+comm.traits <- intersect(trait.sum.ASR$Trait, trait.sum.Con$Trait)
+
+comm.traits2 <- setdiff(comm.traits, traits[disease])
+
+ASR.traits <- trait.sum.ASR[which(trait.sum.ASR$Trait %in% comm.traits2), ]
+Con.traits <- trait.sum.Con[which(trait.sum.Con$Trait %in% comm.traits2), ]
+
+traits <- unique(rownames(IMG.traits[rowSums(IMG.traits) > 10, ]))
+length(traits)
+length(unique(IMG.Cons$trait))
+
+
+IMG.Cons
+IMG.Cons$Trait <- NA
+
+for(i in 1:length(traits)){
+  temp <- which(IMG.Cons$trait == i)
+  IMG.Cons$Trait[c(temp)] <- traits[i]
+}
+
+head(IMG.Cons)
+
+traits2 <- setdiff(traits, traits[disease])
+degrad.traits <- traits[grep("degradation", traits)]
+
+IMG.Cons.A <- list()
+counter <- 1
+trait.names <- vector(mode = "character", length = 0)
+for(i in 1:length(traits2)){
+  temp <- IMG.Cons[IMG.Cons$Trait == traits2[i],]
+  if(length(temp$node) == 1 && temp$node == "Root"){
+    next
+  } else {
+  temp.dist <- temp$distance
+  IMG.Cons.A[[counter]] <- temp.dist
+  trait.names <- c(trait.names, traits2[i])
+  counter <- counter + 1
+  }}
+
+names(IMG.Cons.A) <- trait.names
+
+t.means <- lapply(IMG.Cons.A, mean)
+t.se <- lapply(IMG.Cons.A, se)
+
+plot(x = unlist(t.means), y = 1:length(t.means), pch = 22, bg = "gray",
+     axes = F, xlab = "Age (mya)", ylab = "")
+arrows(x0 = unlist(t.means), x1 = unlist(t.means) + unlist(t.se), 
+      y0 = 1:length(t.means), angle = 90, length = 0.02)
+arrows(x0 = unlist(t.means), x1 = unlist(t.means) - unlist(t.se), 
+      y0 = 1:length(t.means), angle = 90, length = 0.02)
+
+axis(side = 1, labels = T)
+mtext("Trait", side = 2, line = 1)
+box(lwd = 1.5, bty = "l")
+
+```
+
+## ASR Dates
+```{r}
+IMG.ASR <- read.delim("../data/IMG_ASR_PathwaysTemp.csv", sep = ";")
+IMG.ASR <- IMG.ASR[grep("K0", IMG.ASR$trait), ]
+
+
+IMG.ASR$trait.mean <- NA
+IMG.ASR$trait.se <- NA
+for(i in 1:dim(IMG.ASR)[1]){
+  temp <- as.character(IMG.ASR$Dates.Origins[i])
+  temp.num <- as.numeric(unlist(strsplit(temp, ",", fixed = T)))
+  IMG.ASR$trait.mean[i] <- mean(temp.num)
+  IMG.ASR$trait.se[i] <- se(temp.num)
+}
+
+gene.table2 <- gene.table[-c(which(gene.table$A == "Human Diseases")), ]
+
+temp <- unique(gene.table$C)
+N.pathway <- temp[grep("Nitrogen", temp)]
+gene.table.N <- gene.table[which(gene.table$C == N.pathway), ]
+
+
+gene.table.N
+N.genes <- gene.table.N$ko
+
+head(gene.table.N)
+head(IMG.ASR)
+
+IMG.ASR.N <- IMG.ASR[which(IMG.ASR$trait %in% N.genes), ]
+IMG.ASR.N$Name <- NA
+
+for(i in 1:dim(IMG.ASR.N)[1]){
+  temp <- gene.table.N$gene[gene.table.N$ko == IMG.ASR.N$trait[i]]
+  print(temp)
+  temp2 <- strsplit(temp, ";")[[1]][1]
+  IMG.ASR.N$Name[i] <- temp2
+}
+
+# ConsenTrait Comparison
+cons.genes <- read.delim("../data/IMG_Genes_ConsenTrait.txt")
+length(unique(cons.genes$trait))
+tail(cons.genes$trait)
+
+dim(gene.table)
+
+IMG.traits <- read.delim("../data/metagenome_predicted.txt", skip = 1, 
+                         row.names = 1)
+dim(IMG.traits)
+colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
+sum(GG.um$tip.label %in% colnames(IMG.traits))
+sum(colnames(IMG.traits) %in% GG.um$tip.label)
+IMG.traits <- IMG.traits[rowSums(IMG.traits) > 10, ]
+
+dim(IMG.traits)
+head(IMG.traits)
+rownames(IMG.traits)
+
+cons.genes$Name <- NA
+for(i in 1:dim(cons.genes)[1]){
+  temp <- cons.genes$trait[i]
+  cons.genes$Name[i] <- rownames(IMG.traits)[temp]
+}
+
+cons.genes.N <- cons.genes[which(cons.genes$Name %in% gene.table.N$ko), ]
+
+N.gene.cons <- as.data.frame(matrix(NA, ncol = 4, 
+                             nrow = length(unique(cons.genes.N$Name))))
+colnames(N.gene.cons) <- c("trait", "trait.mean", "trait.se")
+N.gene.cons$gene <- unique(cons.genes.N$Name)
+for(i in 1:dim(N.gene.cons)[1]){
+  gene <- N.gene.cons$gene[i]
+  temp <- cons.genes.N[which(cons.genes.N$Name == gene), ]
+  N.gene.cons$mean[i] <- mean(temp$distance)
+  N.gene.cons$se[i] <- se(temp$distance)
+}
+
+N.gene.cons2 <- N.gene.cons[which(N.gene.cons$trait %in% IMG.ASR.N$trait), ]
+N.gene.cons2$Name <- IMG.ASR.N$Name
+```
+
+```{r}
+# Plot
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = IMG.ASR.N$trait.mean, y = 1:dim(IMG.ASR.N)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(0, 4000), ylim = c(0.5, dim(IMG.ASR.N)[1] + 0.5))
+arrows(x0 = IMG.ASR.N$trait.mean, 
+       x1 = IMG.ASR.N$trait.mean + IMG.ASR.N$trait.se, 
+      y0 = 1:dim(IMG.ASR.N)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = IMG.ASR.N$trait.mean, 
+       x1 = IMG.ASR.N$trait.mean - IMG.ASR.N$trait.se, 
+      y0 = 1:dim(IMG.ASR.N)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = IMG.ASR.N$trait.mean, y = 1:dim(IMG.ASR.N)[1], 
+     pch = 22, bg = "gray", cex = 3, lwd = 1.5)
+
+
+arrows(x0 = N.gene.cons2$trait.mean, 
+       x1 = N.gene.cons2$trait.mean + N.gene.cons2$trait.se, 
+      y0 = 1:dim(N.gene.cons2)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+arrows(x0 = N.gene.cons2$trait.mean, 
+       x1 = N.gene.cons2$trait.mean - N.gene.cons2$trait.se, 
+      y0 = 1:dim(N.gene.cons2)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+points(x = N.gene.cons2$trait.mean, y = 1:dim(N.gene.cons2)[1], 
+     pch = 22, bg = "gray", cex = 1.5, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(IMG.ASR.N$Name), 
+     at = 1:dim(IMG.ASR.N)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(IMG.ASR.N)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(IMG.ASR.N)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(IMG.ASR.N)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "",
+     xlim = c(0, 1), ylim = c(0.5, dim(IMG.ASR.N)[1] + 0.5))
+text(x = 0.5, y = 1:dim(IMG.ASR.N)[1]+0.1, 
+     labels = as.character(round(-IMG.ASR.N$Rate1, 6)), cex = 0.75)
+text(x = 0.5, y = 1:dim(IMG.ASR.N)[1]-0.1, 
+     labels = as.character(round(-IMG.ASR.N$Rate2, 6)), cex = 0.75)
+text(x = 0.5, y = dim(IMG.ASR.N)[1] + 0.75,
+     labels = "Rates (X/Y)", xpd = T)
+
+
+```
+
+
 ## ASR Plot
 ```{r}
 png(filename="../figures/GG_TraitASRDates.png",
@@ -850,7 +1059,9 @@ grid.raster(img)
 
 ## Predicted MC Parameters
 ```{r}
-IMG.ASR.
+
+
+IMG.ASR
 
 
 ```
