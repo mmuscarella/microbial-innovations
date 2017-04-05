@@ -1,0 +1,16 @@
+scatterhist <- function(x, y, xlab="", ylab=""){
+  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
+  par(oma = c(1,1,1,1))
+  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
+  xhist = hist(x, plot=FALSE)
+  yhist = hist(y, plot=FALSE)
+  top = max(c(xhist$counts, yhist$counts))
+  par(mar=c(5,5,1,1))
+  plot(x,y, las = 1, xlab = "", ylab = "")
+  mtext(xlab, side=1, line=3, outer=F, cex = 1.25)
+  mtext(ylab, side=2, line=3, outer=F, cex = 1.25)
+  par(mar=c(0,5,1,1))
+  barplot(xhist$counts, axes=FALSE, space=0)
+  par(mar=c(5,0,1,1))
+  barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
+}

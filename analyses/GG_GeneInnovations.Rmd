@@ -1,0 +1,1934 @@
+---
+title: "Microbial Innovations: GreenGenes Gene Innovations"
+author: "Mario E. Muscarella, James P. O'Dwyer"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+  - \usepackage{graphics}
+output: 
+  pdf_document: 
+    fig_caption: yes
+---
+
+
+# Initial Setup
+```{r}
+# Clear Environment and Set Working Directory
+rm(list=ls())
+setwd("~/GitHub/microbial-innovations/analyses")
+
+# Add Basic Functions
+se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
+
+# Load Packages
+require("ape"); require("png"); require("grid")
+require("ggtree")
+require("phytools")
+library("colorspace")
+require("simecol")
+require("picante")
+require("tidyr")
+
+# Load Source Functions
+source("../bin/MothurTools.R")
+source("../bin/di2multi2.R")
+source("../bin/TraitMap.R")
+source("../bin/Scatterhist.R")
+
+# Define Simple Functions
+ggplotColours <- function(n = 6, h = c(0, 360) + 15){
+  if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
+  hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
+}
+
+ttest <- function(reg, coefnum, val){
+  co <- coef(summary(reg))
+  tstat <- (co[coefnum,1]-val)/co[coefnum,2]
+  pstat <- 2 * pt(abs(tstat), reg$df.residual, lower.tail = FALSE)
+  return(list = c(t = tstat, df = reg$df.residual, p =  pstat))
+}
+
+# Save Default Plot Settings
+opar <- par(no.readonly = TRUE)  # Saves plot defaults
+
+# Run All?
+run.all <- FALSE
+```
+
+## Import Green Genes Tree and Taxonomy 
+```{r}
+GG <- read.tree("../data/IMG.tree")
+GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", 
+                   format = "rdp", col.tax = 2, tax.levels = 6)
+```
+
+## Rooted GreenGenes Tree
+```{r, results = "hide"}
+png(filename="../figures/GG_root.png",
+    width = 1600, height = 1600, res = 96*2)
+
+GG.tax2 <- GG.tax[match(GG$tip.label, GG.tax$OTU), ]
+groupInfo <- split(GG$tip.label, GG.tax2$Domain)
+GreenTree <- groupOTU(GG, groupInfo, group_name = "Domain")
+
+GreenTree.r <- midpoint.root(GreenTree)
+groupInfo <- split(GG$tip.label, GG.tax2$Domain)
+GreenTree.r2 <- groupOTU(GreenTree.r, groupInfo, group_name = "Domain")
+levels(attributes(GreenTree.r2)$Domain) <- c("root", names(groupInfo))
+rt <- ggtree(GreenTree.r2, aes(color = Domain), layout="rectangular")
+rt + geom_point2(aes(subset=(node == 3518)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Clean Up
+rm(rt)
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/LTP_root.png")
+grid.raster(img)
+```
+
+## Export Rooted Tree
+```{r}
+write.tree(GreenTree.r, file = "../data/GG.rooted.tre")
+write.nexus(GreenTree.r, file = "../data/GG.rooted.nex")
+```
+
+## GreenGenes Exploratory Tree with Cyano Grouping
+```{r, results = "hide"}
+png(filename="../figures/GG_Cyano.png",
+    width = 1600, height = 1600, res = 96*2)
+
+GG.tax.rooted <- GG.tax[match(GreenTree.r$tip.label, GG.tax$OTU), ]
+all.equal(as.factor(GG.tax.rooted$OTU), as.factor(GreenTree.r$tip.label))
+
+GG.cyano <- GG.tax.rooted$Phylum
+
+for (i in 1:length(GG.cyano)){
+  if (GG.cyano[i] == "Cyanobacteria/Chloroplast"){
+    GG.cyano[i] = "Cyanobacteria"
+  } else {
+    if (GG.tax.rooted$Domain[i] == "Archaea"){
+      GG.cyano[i] = "Archaea"
+    } else {
+      GG.cyano[i] = "Other Bacteria"
+    }
+  }
+}
+
+groupInfo <- split(GreenTree.r$tip.label, GG.cyano)
+
+# How Many Cyanos
+length(grep("[C|c]yano*", GG.tax.rooted$Phylum))
+
+GG.cy <- groupOTU(GreenTree.r, groupInfo, group_name = "Cyano")
+levels(attributes(GG.cy)$Cyano) <- c("Root", names(groupInfo))
+
+
+GG <- ggtree(GG.cy, aes(color = Cyano, layout="rectangular"))
+
+GG + geom_text(aes(label = node), show.legend = FALSE,
+            hjust=-0.1, vjust = -0.5, size = 2) + 
+  geom_point2(aes(subset=(node == 4587)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  geom_point2(aes(subset=(node == 2732)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)]), name="") 
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Clean Up
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_Cyano.png")
+grid.raster(img)
+```
+
+## ID Midpoint and Cyano tips
+```{r}
+# Root
+D <- cophenetic(GreenTree.r)
+dd <- max(D)
+ii <- which(D == dd)[1]
+ii <- c(ceiling(ii/nrow(D)), ii%%nrow(D))
+if (ii[2] == 0) 
+    ii[2] <- nrow(D)
+spp <- rownames(D)[ii]
+
+# Cyano
+D <- cophenetic(extract.clade(GreenTree.r, node = 4587))
+dd <- max(D)
+ii <- which(D == dd)[1]
+ii <- c(ceiling(ii/nrow(D)), ii%%nrow(D))
+if (ii[2] == 0) 
+    ii[2] <- nrow(D)
+spp <- rownames(D)[ii]
+```
+
+## Make Tree Ultrametric
+I used treePL to make the tree ultrametric. My config file was pretty simple. 
+It took way too long to get treePL to work. Maybe an alternative would be better.
+It looks like there are some program in R. 
+The most common are chronos, chronopl, chronoMPL. But I don't know how they compare.
+
+The output file was `LTP.dated.tree`
+```{r, results = "hide"}
+GG.um <- read.tree("../data/GG.dated.tree")
+
+png(filename="../figures/GG_dated.png",
+    width = 1600, height = 1600, res = 96*2)
+
+GreenTree.um <- groupOTU(GG.um, groupInfo, group_name = "Domain")
+levels(attributes(GreenTree.um)$Domain) <- c("root", names(groupInfo))
+um <- ggtree(GreenTree.um, aes(color = Domain), layout="rectangular")
+um + geom_point2(aes(subset=(node == 4587)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[4], fill = "gray80") + 
+  geom_point2(aes(subset=(node == 2732)), size=4, shape=18, 
+                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  theme_tree2(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(values=c(ggplotColours(n = 4)[c(1,2,4,3)]), name="") 
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Clear Up
+rm(um)
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_dated.png")
+grid.raster(img)
+```
+
+
+# GreenGenes Traits: Gene Traits
+## Import Trait and KEGG Databases
+```{r}
+# Import Trait Database
+IMG.traits <- read.delim("../data/metagenome_predicted.txt", skip = 1, 
+                         row.names = 1)
+dim(IMG.traits)
+colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
+sum(GG.um$tip.label %in% colnames(IMG.traits))
+sum(colnames(IMG.traits) %in% GG.um$tip.label)
+IMG.traits <- IMG.traits[rowSums(IMG.traits) >= 10, ]
+
+dim(IMG.traits)
+head(IMG.traits)[1:5]
+
+# Core Genes (Found in All Organisms)
+dim(IMG.traits)
+core <- which(rowSums(IMG.traits > 1) >= (dim(IMG.traits)[2] * 0.9))
+
+# Import KEGG Database
+gene.database.temp <- read.table("../data/ko00001.keg", header = T, 
+                                 fill = T, comment.char = "#", 
+                                 quote = "", sep = "\t")
+
+# Organize KEGG
+A.level.index <- grep("A<b>", gene.database.temp$X.D)
+A.levels <- gsub("A<b>", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[A.level.index])))
+
+B.level.index <- grep("B  <b>", gene.database.temp$X.D)
+B.levels <- gsub("B  <b>", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[B.level.index])))
+
+C.level.index <- grep("C    ", gene.database.temp$X.D)
+C.levels <- gsub("C    ", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[C.level.index]))) 
+
+D.level.index <- grep("D      K", gene.database.temp$X.D)
+D.levels <- gsub("D      K", "K", 
+                 as.character(gene.database.temp$X.D[D.level.index]))
+D.ko <- sapply(strsplit(D.levels , "  "), function(x) x[1])
+D.gene <- sapply(strsplit(D.levels , "  "), function(x) x[2])
+
+# Create Gene Dictionary
+gene.table <- data.frame(matrix(NA, nrow = length(D.levels), ncol = 5))
+colnames(gene.table) <- c("A", "B", "C", "ko", "gene")
+gene.table$ko <- D.ko
+gene.table$gene <- D.gene
+
+A.ranges <- c(A.level.index, max(D.level.index))
+B.ranges <- c(B.level.index, max(D.level.index))
+C.ranges <- c(C.level.index, max(D.level.index))
+
+for(a in 1:length(A.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(A.ranges[a], A.ranges[a+1]))]
+  gene.table$A[D.level.index %in% temp] <- A.levels[a]
+}
+
+for(b in 1:length(B.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(B.ranges[b], B.ranges[b+1]))]
+  gene.table$B[D.level.index %in% temp] <- B.levels[b]
+}
+
+for(c in 1:length(C.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(C.ranges[c], C.ranges[c+1]))]
+  gene.table$C[D.level.index %in% temp] <- C.levels[c]
+}
+  
+dim(gene.table)
+head(gene.table)[1:5]
+
+# Remove Human Disease
+gene.dictionary <- gene.table[-c(which(gene.table$A == "Human Diseases")), ]
+
+length(gene.dictionary$ko)
+length(unique(gene.dictionary$ko))
+```
+
+## ConsenTrait Prediction
+```{r}
+IMG.Cons <- read.delim("../data/IMG_Genes_ConsenTrait.txt")
+
+# Fetch Names from Trait Database
+IMG.Cons$Name <- NA
+for(i in 1:dim(IMG.Cons)[1]){
+  temp <- IMG.Cons$trait[i]
+  IMG.Cons$Name[i] <- rownames(IMG.traits)[temp]
+}
+
+# Create Gene Table
+Gene.Cons <- as.data.frame(matrix(NA, ncol = 5, 
+                           nrow = length(unique(IMG.Cons$Name))))
+colnames(Gene.Cons) <- c("gene", "origins", "trait.mean", "trait.se", "nodes") 
+
+# Node Correction (Con starts at 1 not at Ntips + 1)
+Ntips <- length(GG.um$tip.label)
+IMG.Cons$node2 <- as.numeric(IMG.Cons$node) + Ntips
+
+# Populate Gene Table
+Gene.Cons$gene <- sort(unique(IMG.Cons$Name))
+for(i in 1:dim(Gene.Cons)[1]){
+  gene <- Gene.Cons$gene[i]
+  temp <- IMG.Cons[which(IMG.Cons$Name == gene), ]
+  temp <- temp[which(temp$cluster_size > 1), ]
+  nodes <- toString(temp$node2, collapse = ", ")
+  Gene.Cons$origins[i] <- dim(temp)[1]
+  Gene.Cons$trait.mean[i] <- mean(temp$distance)
+  Gene.Cons$trait.se[i] <- se(temp$distance)
+  Gene.Cons$nodes[i] <- nodes
+}
+```
+
+## ASR Predictions
+```{r}
+IMG.ASR.full <- read.delim("../data/IMG_genes_ASR_Long.txt")
+
+# Fetch Names from Trait Database
+IMG.ASR.full$Name <- IMG.ASR.full$Trait
+
+# Create Gene Table
+Gene.ASR.full <- as.data.frame(matrix(NA, ncol = 4, 
+                           nrow = length(unique(IMG.ASR.full$Name))))
+colnames(Gene.ASR.full) <- c("gene", "origins", "trait.mean", "trait.se")
+
+# Populate Gene Table
+Gene.ASR.full$gene <- unique(IMG.ASR.full$Name)
+for(i in 1:dim(Gene.ASR.full)[1]){
+  gene <- Gene.ASR.full$gene[i]
+  temp <- IMG.ASR.full[which(IMG.ASR.full$Name == gene), ]
+  Gene.ASR.full$origins[i] <- dim(temp)[1]
+  Gene.ASR.full$trait.mean[i] <- mean(temp$R.Dist)
+  Gene.ASR.full$trait.se[i] <- se(temp$R.Dist)
+}
+
+# Only ASR Origins
+IMG.ASR <- read.delim("../data/IMG_genes_ASR.txt")
+IMG.ASR$Name <- IMG.ASR$trait
+
+# Correct Dates (Subtract from Max Depth in Tree)
+max.dist <- max(as.matrix(dist.nodes(GG.um))[,length(GG.um$tip.label) + 1])
+
+Gene.ASR <- as.data.frame(matrix(NA, ncol = 7, 
+                           nrow = length(unique(IMG.ASR$Name))))
+colnames(Gene.ASR) <- c("gene", "x", "y", "origins", "trait.mean", 
+                        "trait.se", "nodes")
+
+Gene.ASR$gene <- as.character(sort(unique(IMG.ASR$Name)))
+for(i in 1:dim(Gene.ASR)[1]){
+  gene <- Gene.ASR$gene[i]
+  temp <- IMG.ASR[which(IMG.ASR$Name == gene), ]
+  temp.dates <- as.character(temp$Dates.Origins)
+  temp.num <- as.numeric(unlist(strsplit(temp.dates, ",", fixed = T)))
+  temp.num <- max.dist - temp.num
+  Gene.ASR$x[i] <- temp$Rate1
+  Gene.ASR$y[i] <- temp$Rate2
+  Gene.ASR$origins[i] <- length(as.numeric(temp.num))
+  Gene.ASR$trait.mean[i] <- mean(temp.num)
+  Gene.ASR$trait.se[i] <- se(temp.num)
+  Gene.ASR$nodes[i] <- as.character(temp$Origins)
+}
+```
+
+## Origins and Rates
+```{r}
+Gene.ASR2 <- Gene.ASR[which(Gene.ASR$gene %in% gene.dictionary$ko), ]
+Gene.Cons2 <- Gene.Cons[which(Gene.Cons$gene %in% gene.dictionary$ko), ]
+
+gene.set <- union(Gene.ASR2$gene, Gene.Cons2$gene)
+
+Gene.Origins <- as.data.frame(matrix(NA, nrow = length(gene.set),
+                                  ncol = 10))
+colnames(Gene.Origins) <- c("Gene", "Name", "X", "Y", 
+                         "ASR.Mean", "ASR.SE", "ASR.origins",
+                         "CON.Mean", "CON.SE", "CON.origins")
+
+Gene.Origins$Gene <- sort(gene.set)
+
+for(i in 1:dim(Gene.Origins)[1]){
+  gene.temp <- Gene.Origins$Gene[i]
+  asr.temp <- Gene.ASR2[which(Gene.ASR2$gene == gene.temp), ]
+  con.temp <- Gene.Cons2[which(Gene.Cons2$gene == gene.temp), ]
+  name.temp <- gene.dictionary$gene[which(gene.dictionary$ko ==
+                                          Gene.Origins$Gene[i])]
+  name.temp2 <- strsplit(name.temp, ";")[[1]][1]
+  Gene.Origins$Name[i] <- name.temp2
+  if(dim(asr.temp)[1] != 0){
+  Gene.Origins$X[i] <- asr.temp$x
+  Gene.Origins$Y[i] <- asr.temp$y
+  Gene.Origins$ASR.Mean[i] <- asr.temp$trait.mean
+  Gene.Origins$ASR.SE[i] <- asr.temp$trait.se
+  Gene.Origins$ASR.origins[i] <- asr.temp$nodes
+  }
+  if(dim(con.temp)[1] != 0){
+  Gene.Origins$CON.Mean[i] <- con.temp$trait.mean
+  Gene.Origins$CON.SE[i] <- con.temp$trait.se
+  Gene.Origins$CON.origins[i] <- con.temp$nodes
+  }
+}
+```
+
+## Origin Comparison
+```{r}
+
+
+x = Gene.Origins$ASR.Mean
+y = Gene.Origins$CON.Mean
+zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
+par(oma = c(1,1,1,1))
+layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
+xhist = hist(x, plot=FALSE, breaks = seq(0, 4100, 100))
+yhist = hist(y, plot=FALSE, breaks = xhist$breaks)
+top = max(c(xhist$counts, yhist$counts))
+par(mar=c(5,6,1,1))
+plot(x,y, las = 1, xlab = "", ylab = "",
+     xlim = c(0, 3500), ylim = c(0, 4100),
+     bg=rgb(0, 0, 1, 0.5), pch=21)
+mtext("ASR Origin (mya)", side=1, line=3, outer=F, cex = 1.5)
+mtext("ConsenTrait Origin (mya)", side=2, line=4, outer=F, cex = 1.5)
+par(mar=c(0,6,1,1))
+barplot(xhist$counts[0:35], axes=FALSE, space=0, xlim = c(0, 35))
+par(mar=c(5,0,1,1))
+barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
+
+```
+
+
+## Core Genes
+```{r}
+max(table(gene.dictionary$ko))
+
+
+```
+
+
+plot(Gene.ASR3$y, Gene.Cons3$trait.mean)
+
+plot(log(-Gene.ASR3$x), log(-Gene.ASR3$y))
+```
+
+# Nitrogen Genes
+```{r}
+temp <- unique(gene.dictionary$C)
+N.pathway <- temp[grep("Nitrogen", temp)]
+Nitrogen.Table <- gene.dictionary[which(gene.dictionary$C == N.pathway), ]
+N.Genes <- Nitrogen.Table$ko
+
+N.ASR <- Gene.ASR3[which(Gene.ASR3$gene %in% N.Genes), ]
+N.Cons <- Gene.Cons3[which(Gene.Cons3$gene %in% N.Genes), ]
+
+N.ASR$name <- NA
+for(i in 1:dim(N.ASR)[1]){
+  temp <- gene.dictionary$gene[which(gene.dictionary$ko == N.ASR$gene[i])]
+  temp2 <- strsplit(temp, ";")[[1]][1]
+  N.ASR$name[i] <- temp2
+}
+
+
+```
+
+## Plot
+```{r}
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = N.ASR$trait.mean, y = 1:dim(N.ASR)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(N.ASR)[1] + 0.5))
+arrows(x0 = N.ASR$trait.mean, 
+       x1 = N.ASR$trait.mean + N.ASR$trait.se, 
+      y0 = 1:dim(N.ASR)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = N.ASR$trait.mean, 
+       x1 = N.ASR$trait.mean - N.ASR$trait.se, 
+      y0 = 1:dim(N.ASR)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = N.ASR$trait.mean, y = 1:dim(N.ASR)[1], 
+     pch = 22, bg = "gray", cex = 3, lwd = 1.5)
+
+
+arrows(x0 = N.Cons$trait.mean, 
+       x1 = N.Cons$trait.mean + N.Cons$trait.se, 
+      y0 = 1:dim(N.Cons)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+arrows(x0 = N.Cons$trait.mean, 
+       x1 = N.Cons$trait.mean - N.Cons$trait.se, 
+      y0 = 1:dim(N.Cons)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+points(x = N.Cons$trait.mean, y = 1:dim(N.Cons)[1], 
+     pch = 22, bg = "gray", cex = 1.5, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(N.ASR$name), 
+     at = 1:dim(N.ASR)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(N.ASR)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(N.ASR)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(N.ASR)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(N.ASR)[1] + 0.5))
+text(x = 0.5, y = 1:dim(N.ASR)[1]+0.2, 
+     labels = as.character(round(-N.ASR$x, 6)), cex = 0.75)
+text(x = 0.5, y = 1:dim(N.ASR)[1]-0.2, 
+     labels = as.character(round(-N.ASR$y, 6)), cex = 0.75)
+text(x = 0.5, y = dim(N.ASR)[1] + 0.75,
+     labels = "Rates (X/Y)", xpd = T)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+# OTHER
+
+```{r}
+IMG.traits <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, 
+                         row.names = 1)
+dim(IMG.traits)
+colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
+sum(GreenTree.um$tip.label %in% colnames(IMG.traits))
+sum(colnames(IMG.traits) %in% GreenTree.um$tip.label)
+
+rowSums(IMG.traits > 1)
+
+# Drop tips not found in trait table
+missing <- subset(GreenTree.um$tip.label, 
+                  !(GreenTree.um$tip.label %in% colnames(IMG.traits)))
+
+IMG.tree <- drop.tip(GreenTree.r, missing)
+
+missing <- subset(GreenTree.r$tip.label, 
+                  !(GreenTree.r$tip.label %in% colnames(IMG.traits)))
+
+IMG.tree <- drop.tip(GreenTree.um, missing)
+
+IMG.trait.tab <- data.frame(colnames(IMG.traits), t(IMG.traits))
+
+precal <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, row.names = 1)
+dim(precal)
+
+
+```
+
+
+## ConsenTrait Predictions
+```{r}
+IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
+
+# How "Deep" are traits conserved
+png(filename="../figures/GG_TraitConservation.png",
+      width = 800, height = 800, res = 96*2)
+  
+par(mar = c(4, 4, 1, 1))
+plot(log10(sort(IMG.Cons$distance, decreasing = T)), 
+     xlab = "", ylab = "", las = 1, col=rgb(0, 0, 1, 0.5), pch=16)
+
+mtext(side = 1, text = "Index", line = 2.5, cex = 1.25)
+mtext(side = 2, text = expression(paste("Date (log"[10], ")")), 
+      line = 2.5, cex = 1.25)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitConservation.png")
+grid.raster(img)
+```
+
+## ConsenTrait Summary
+```{r}
+# Trait Origins
+head(IMG.Cons)
+length(unique(IMG.Cons$trait))
+IMG.Cons2 <- IMG.Cons[-c(which(IMG.Cons$node == "Root")), ]
+
+root.traits <- unique(IMG.Cons$trait[which(IMG.Cons$node == "Root")])
+
+
+traits <- unique(rownames(IMG.traits[rowSums(IMG.traits) > 10, ]))
+length(traits)
+
+root.traits <- unique(IMG.Cons$trait[which(IMG.Cons$node == "Root")])
+traits[root.traits]
+
+IMG.Cons2$distance2 <- max(IMG.Cons2$distance) - IMG.Cons2$distance
+
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons2$trait)), 5))
+colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
+
+for (i in 1:length(unique(IMG.Cons2$trait))){
+  trait <- unique(IMG.Cons2$trait)[i]
+  temp <- IMG.Cons2[IMG.Cons2$trait == trait, ]
+  
+  yearly.evol <- quantile(temp$distance2)[2]
+  med.evol <- quantile(temp$distance2)[3]
+  late.evol <- quantile(temp$distance2)[4]
+  n.evol <- dim(temp)[1]
+  trait.sum[i, 1] <- traits[i]
+  trait.sum[i, 2] <- yearly.evol
+  trait.sum[i, 3] <- med.evol
+  trait.sum[i, 4] <- late.evol
+  trait.sum[i, 5] <- n.evol
+}
+
+trait.sum.Con <- trait.sum[trait.sum$NumEvol > 0, ]
+```
+
+## ASR Results
+```{r}
+IMG.ASR <- read.delim("../data/IMG_ASR_long.txt")
+
+IMG.ASR <- IMG.ASR[complete.cases(IMG.ASR$R.Dist), ]
+
+traits <- gsub("\\.", " ", unique(IMG.ASR$Trait))
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.ASR$Trait)), 5))
+colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
+
+for(i in 1:length(traits)){
+  trait <- traits[i]
+  temp <- IMG.ASR[which(gsub("\\.", " ", IMG.ASR$Trait) == trait), ]
+  
+  yearly.evol <- quantile(temp$R.Dist)[2]
+  med.evol <- quantile(temp$R.Dist)[3]
+  late.evol <- quantile(temp$R.Dist)[4]
+  n.evol <- dim(temp)[1]
+  trait.sum[i, 1] <- traits[i]
+  trait.sum[i, 2] <- yearly.evol
+  trait.sum[i, 3] <- med.evol
+  trait.sum[i, 4] <- late.evol
+  trait.sum[i, 5] <- n.evol
+}
+
+trait.sum.ASR <- trait.sum[which(trait.sum$NumEvol > 0), ]
+```
+
+## ConsenTrait Plot
+```{r}
+png(filename="../figures/GG_TraitConservationDates.png",
+      width = 1800, height = 600, res = 96*2)
+
+
+layout(matrix(1:3, ncol = 3))
+par(mar = c(4, 4, 2, 1), oma = c(1, 1.5, 1, 1))
+
+plot((trait.sum.Con$FirstDate), jitter(trait.sum.Con$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Early Points of Conservation")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+plot((trait.sum.Con$MedianDate), jitter(trait.sum.Con$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Intermediate Points of Conservation")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+plot((trait.sum.Con$LateDate), jitter(trait.sum.Con$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 80),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Late Points of Conservation")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitConservationDates.png")
+grid.raster(img)
+```
+
+## ConsenTrait Dates
+```{r}
+traits
+length(traits)
+IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
+length(unique(IMG.Cons$trait))
+
+traits <- rownames(IMG.traits)
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits), grep("muscle", traits),
+                 grep("trypanosomiasis", traits), grep("Calcium", traits),
+                 grep("myocarditis", traits)))
+comm.traits <- intersect(trait.sum.ASR$Trait, trait.sum.Con$Trait)
+
+comm.traits2 <- setdiff(comm.traits, traits[disease])
+
+ASR.traits <- trait.sum.ASR[which(trait.sum.ASR$Trait %in% comm.traits2), ]
+Con.traits <- trait.sum.Con[which(trait.sum.Con$Trait %in% comm.traits2), ]
+
+traits <- unique(rownames(IMG.traits[rowSums(IMG.traits) > 10, ]))
+length(traits)
+length(unique(IMG.Cons$trait))
+
+
+IMG.Cons
+IMG.Cons$Trait <- NA
+
+for(i in 1:length(traits)){
+  temp <- which(IMG.Cons$trait == i)
+  IMG.Cons$Trait[c(temp)] <- traits[i]
+}
+
+head(IMG.Cons)
+
+traits2 <- setdiff(traits, traits[disease])
+degrad.traits <- traits[grep("degradation", traits)]
+
+IMG.Cons.A <- list()
+counter <- 1
+trait.names <- vector(mode = "character", length = 0)
+for(i in 1:length(traits2)){
+  temp <- IMG.Cons[IMG.Cons$Trait == traits2[i],]
+  if(length(temp$node) == 1 && temp$node == "Root"){
+    next
+  } else {
+  temp.dist <- temp$distance
+  IMG.Cons.A[[counter]] <- temp.dist
+  trait.names <- c(trait.names, traits2[i])
+  counter <- counter + 1
+  }}
+
+names(IMG.Cons.A) <- trait.names
+
+t.means <- lapply(IMG.Cons.A, mean)
+t.se <- lapply(IMG.Cons.A, se)
+
+plot(x = unlist(t.means), y = 1:length(t.means), pch = 22, bg = "gray",
+     axes = F, xlab = "Age (mya)", ylab = "")
+arrows(x0 = unlist(t.means), x1 = unlist(t.means) + unlist(t.se), 
+      y0 = 1:length(t.means), angle = 90, length = 0.02)
+arrows(x0 = unlist(t.means), x1 = unlist(t.means) - unlist(t.se), 
+      y0 = 1:length(t.means), angle = 90, length = 0.02)
+
+axis(side = 1, labels = T)
+mtext("Trait", side = 2, line = 1)
+box(lwd = 1.5, bty = "l")
+
+```
+
+## ASR Dates
+```{r}
+IMG.ASR <- read.delim("../data/IMG_ASR_PathwaysTemp.csv", sep = ";")
+IMG.ASR <- IMG.ASR[grep("K0", IMG.ASR$trait), ]
+
+
+IMG.ASR$trait.mean <- NA
+IMG.ASR$trait.se <- NA
+for(i in 1:dim(IMG.ASR)[1]){
+  temp <- as.character(IMG.ASR$Dates.Origins[i])
+  temp.num <- as.numeric(unlist(strsplit(temp, ",", fixed = T)))
+  IMG.ASR$trait.mean[i] <- mean(temp.num)
+  IMG.ASR$trait.se[i] <- se(temp.num)
+}
+
+gene.table2 <- gene.table[-c(which(gene.table$A == "Human Diseases")), ]
+
+temp <- unique(gene.table$C)
+N.pathway <- temp[grep("Nitrogen", temp)]
+gene.table.N <- gene.table[which(gene.table$C == N.pathway), ]
+
+
+gene.table.N
+N.genes <- gene.table.N$ko
+
+head(gene.table.N)
+head(IMG.ASR)
+
+IMG.ASR.N <- IMG.ASR[which(IMG.ASR$trait %in% N.genes), ]
+IMG.ASR.N$Name <- NA
+
+for(i in 1:dim(IMG.ASR.N)[1]){
+  temp <- gene.table.N$gene[gene.table.N$ko == IMG.ASR.N$trait[i]]
+  print(temp)
+  temp2 <- strsplit(temp, ";")[[1]][1]
+  IMG.ASR.N$Name[i] <- temp2
+}
+
+# ConsenTrait Comparison
+cons.genes <- read.delim("../data/IMG_Genes_ConsenTrait.txt")
+length(unique(cons.genes$trait))
+tail(cons.genes$trait)
+
+dim(gene.table)
+
+IMG.traits <- read.delim("../data/metagenome_predicted.txt", skip = 1, 
+                         row.names = 1)
+dim(IMG.traits)
+colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
+sum(GG.um$tip.label %in% colnames(IMG.traits))
+sum(colnames(IMG.traits) %in% GG.um$tip.label)
+IMG.traits <- IMG.traits[rowSums(IMG.traits) > 10, ]
+
+dim(IMG.traits)
+head(IMG.traits)
+rownames(IMG.traits)
+
+cons.genes$Name <- NA
+for(i in 1:dim(cons.genes)[1]){
+  temp <- cons.genes$trait[i]
+  cons.genes$Name[i] <- rownames(IMG.traits)[temp]
+}
+
+cons.genes.N <- cons.genes[which(cons.genes$Name %in% gene.table.N$ko), ]
+
+N.gene.cons <- as.data.frame(matrix(NA, ncol = 4, 
+                             nrow = length(unique(cons.genes.N$Name))))
+colnames(N.gene.cons) <- c("trait", "trait.mean", "trait.se")
+N.gene.cons$gene <- unique(cons.genes.N$Name)
+for(i in 1:dim(N.gene.cons)[1]){
+  gene <- N.gene.cons$gene[i]
+  temp <- cons.genes.N[which(cons.genes.N$Name == gene), ]
+  N.gene.cons$mean[i] <- mean(temp$distance)
+  N.gene.cons$se[i] <- se(temp$distance)
+}
+
+N.gene.cons2 <- N.gene.cons[which(N.gene.cons$trait %in% IMG.ASR.N$trait), ]
+N.gene.cons2$Name <- IMG.ASR.N$Name
+```
+
+```{r}
+# Plot
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = IMG.ASR.N$trait.mean, y = 1:dim(IMG.ASR.N)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(0, 4000), ylim = c(0.5, dim(IMG.ASR.N)[1] + 0.5))
+arrows(x0 = IMG.ASR.N$trait.mean, 
+       x1 = IMG.ASR.N$trait.mean + IMG.ASR.N$trait.se, 
+      y0 = 1:dim(IMG.ASR.N)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = IMG.ASR.N$trait.mean, 
+       x1 = IMG.ASR.N$trait.mean - IMG.ASR.N$trait.se, 
+      y0 = 1:dim(IMG.ASR.N)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = IMG.ASR.N$trait.mean, y = 1:dim(IMG.ASR.N)[1], 
+     pch = 22, bg = "gray", cex = 3, lwd = 1.5)
+
+
+arrows(x0 = N.gene.cons2$trait.mean, 
+       x1 = N.gene.cons2$trait.mean + N.gene.cons2$trait.se, 
+      y0 = 1:dim(N.gene.cons2)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+arrows(x0 = N.gene.cons2$trait.mean, 
+       x1 = N.gene.cons2$trait.mean - N.gene.cons2$trait.se, 
+      y0 = 1:dim(N.gene.cons2)[1], 
+      angle = 90, length = 0.1, lwd = 1.5, col = "red")
+points(x = N.gene.cons2$trait.mean, y = 1:dim(N.gene.cons2)[1], 
+     pch = 22, bg = "gray", cex = 1.5, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(IMG.ASR.N$Name), 
+     at = 1:dim(IMG.ASR.N)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(IMG.ASR.N)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(IMG.ASR.N)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(IMG.ASR.N)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "",
+     xlim = c(0, 1), ylim = c(0.5, dim(IMG.ASR.N)[1] + 0.5))
+text(x = 0.5, y = 1:dim(IMG.ASR.N)[1]+0.1, 
+     labels = as.character(round(-IMG.ASR.N$Rate1, 6)), cex = 0.75)
+text(x = 0.5, y = 1:dim(IMG.ASR.N)[1]-0.1, 
+     labels = as.character(round(-IMG.ASR.N$Rate2, 6)), cex = 0.75)
+text(x = 0.5, y = dim(IMG.ASR.N)[1] + 0.75,
+     labels = "Rates (X/Y)", xpd = T)
+
+
+```
+
+
+## ASR Plot
+```{r}
+png(filename="../figures/GG_TraitASRDates.png",
+      width = 1800, height = 600, res = 96*2)
+
+layout(matrix(1:3, ncol = 3))
+par(mar = c(4, 4, 2, 1), oma = c(1, 1.5, 1, 1))
+
+plot(jitter(trait.sum.ASR$FirstDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Early Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+plot(jitter(trait.sum.ASR$MedianDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Intermediate Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+
+
+plot(jitter(trait.sum.ASR$LateDate, factor = 10), jitter(trait.sum.ASR$NumEvol),
+     xlab = "", ylab = "", las = 1, ylim = c(0, 400),
+     col=rgb(0, 0, 1, 0.5), pch=16,
+     main = "Late Ancestral Points")
+
+mtext(side = 1, text = expression(paste("Time")), 
+      line = 3, cex = 1)
+mtext(side = 2, text = "Origins", 
+      line = 3, cex = 1)
+
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_TraitASRDates.png")
+grid.raster(img)
+```
+
+## Predicted MC Parameters
+```{r}
+
+
+IMG.ASR
+
+
+```
+
+## Differences in Median Evolution Date
+```{r}
+traits <- rownames(IMG.traits)
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits), grep("muscle", traits),
+                 grep("trypanosomiasis", traits), grep("Calcium", traits)))
+comm.traits <- intersect(trait.sum.ASR$Trait, trait.sum.Con$Trait)
+
+comm.traits2 <- setdiff(comm.traits, traits[disease])
+
+ASR.traits <- trait.sum.ASR[which(trait.sum.ASR$Trait %in% comm.traits2), ]
+Con.traits <- trait.sum.Con[which(trait.sum.Con$Trait %in% comm.traits2), ]
+
+par(mar = c(4, 5, 1, 1) + 0.5)
+
+plot(4071 - ASR.traits$MedianDate, 4071 - Con.traits$MedianDate,
+     xlim = c(0, 2500), ylim = c(0, 3600),
+     xlab = "", ylab = "", las = 1, pch = 21, bg = "gray",
+     axes = F)
+
+abline(0, 1, lty = 2)
+axis(side = 2, at = c(seq(0, 4000, 1000)), las= 1)
+axis(side = 1, labels = T, las = 1)
+mtext(side = 1, "Ancestral State Origin (mya)", line = 2.5)
+mtext(side = 2, "Trait Conservation (mya)", line = 4)
+box(lwd = 1.5)
+
+# Label Some Points
+outlier <- c(which(ASR.traits$MedianDate < 2000), 
+             which(Con.traits$MedianDate < 2500))
+
+out.X <- 4071 - ASR.traits$MedianDate[outlier]
+out.Y <- 4071 - Con.traits$MedianDate[outlier]
+out.name <- Con.traits$Trait[outlier]
+
+text(labels = out.name, out.X, out.Y, cex = 0.6)
+
+sum(ASR.traits$MedianDate > 1000)
+sum(ASR.traits$MedianDate < 1000)
+
+sum(Con.traits$MedianDate > 500)
+sum(Con.traits$MedianDate < 500)
+
+Con.traits$Trait[Con.traits$MedianDate > 500]
+```
+
+## Phylogenetic Patterns ConsenTrait
+```{r}
+IMG.tree$node.label
+Ntips <- length(IMG.tree$tip.label)
+max(dist.nodes(IMG.tree)[,1])/2
+
+full <- IMG.tree$edge.length[IMG.tree$edge[,2] > length(IMG.tree$tip.label)]
+to.des <- full[which(IMG.tree$edge[,2] %in% (as.numeric(IMG.Cons2$node) + Ntips))]
+from.des <- full[which(IMG.tree$edge[,1] %in% (as.numeric(IMG.Cons2$node) + Ntips))]
+
+to.anc <- full[which(IMG.tree$edge[,2] %in% which(IMG.tree$edge[, 2] %in% 
+                                      (as.numeric(IMG.Cons2$node) + Ntips)))]
+
+
+par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+
+main <- hist(log10(full), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = "gray", breaks = 20)
+
+
+axis(1, at = c(-1, 0, 1, 2, 3, 4), 
+     labels = expression(10^-1, 1, 10^1, 10^2, 10^3, 10^4),  
+     las = 1, lwd = 1.5)
+axis(2, labels = T, las = 1, lwd = 1.5)
+
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
+
+hist(log10(from.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(0, 0, 1, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 0, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.anc), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 1, 1), add = T, breaks = main$breaks)
+
+ratios <- rep(NA, length(IMG.Cons2$node))
+
+for (i in 1:length(as.numeric(IMG.Cons2$node) + Ntips)){
+  x <- (as.numeric(IMG.Cons2$node) + Ntips)[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+trait.ratios <- data.frame(Trait = IMG.Cons2$trait, Distance = IMG.Cons2$distance2,
+                           Ratio = ratios)
+
+plot(Ratio ~ Distance, data = trait.ratios)
+abline(h = 0.5, lty = 2)
+
+
+by.trait <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = mean)
+by.trait.sem <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = sem)
+
+by.trait <- by.trait[order(as.numeric(by.trait$Ratio)), ]
+by.trait.sem <- by.trait.sem[order(as.numeric(by.trait$Ratio)), ]
+
+plot(by.trait$Ratio, ylab = "Ratio (D/U+D)")
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio +
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio -
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+abline(h = 0.5, lty = 2)
+
+```
+
+## Phylogenetic Patterns ASR
+```{r}
+full <- IMG.tree$edge.length[IMG.tree$edge[,2] > length(IMG.tree$tip.label)]
+to.anc <- full[unique(which(IMG.tree$edge[,2] %in% unique(IMG.ASR$Anc)))]
+from.anc <- full[unique(which(IMG.tree$edge[,1] %in% unique(IMG.ASR$Anc)))]
+
+to.des <- full[unique(which(IMG.tree$edge[,2] %in% unique(IMG.ASR$Des)))]
+from.des <- full[unique(which(IMG.tree$edge[,1] %in% unique(IMG.ASR$Des)))]
+
+
+
+par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+
+main <- hist(log10(full), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = "gray", breaks = 20)
+
+
+axis(1, at = c(-1, 0, 1, 2, 3, 4), 
+     labels = expression(10^-1, 1, 10^1, 10^2, 10^3, 10^4),  
+     las = 1, lwd = 1.5)
+axis(2, labels = T, las = 1, lwd = 1.5)
+
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
+
+hist(log10(from.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(0, 0, 1, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.des), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 0, 1), add = T, breaks = main$breaks)
+
+hist(log10(to.anc), main = "Edge Lengths",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-0.5, 3.5), ylim = c(0, 400), 
+     col = rgb(1, 0, 1, 1), add = T, breaks = main$breaks)
+
+```
+
+
+## ASR Branch Length Ratios
+```{r}
+png(filename="../figures/GG_ASRBranchLength.png",
+      width = 1600, height = 800, res = 96*2)
+layout(matrix(1:2, ncol = 2))
+par(mar = c(4, 4, 1, 1) + 0.5)
+
+ratios <- rep(NA, dim(IMG.ASR)[1])
+
+for (i in 1:length(ratios)){
+  x <- IMG.ASR$Des[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+trait.ratios <- data.frame(Trait = IMG.ASR$Trait, Distance = IMG.ASR$R.Dist,
+                           Ratio = ratios)
+dups <- which(duplicated(ratios))
+
+trait.ratios <- trait.ratios[-c(dups), ]
+
+plot(Ratio ~ Distance, data = trait.ratios,
+          ylab = "Ratio (D/U+D)", xlab = "",
+     ylim = c(0,1), las = 1, axes = F,
+     bg=rgb(0, 0, 1, 0.5), pch=21)
+axis(side = 1, at = c(1000, 2000, 3000, 4000), 
+     labels = c(4000, 3000, 2000, 1000))
+axis(side = 2, labels = T, las = 1)
+mtext(side = 1, "Time (mya)", line = 2.5)
+box(lwd = 1.5)
+
+mod <- lm(trait.ratios$Ratio ~ trait.ratios$Distance)
+abline(mod)
+abline(h = 0.5, lty = 2)
+
+by.trait <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = mean)
+by.trait.sem <- aggregate(Ratio ~ Trait, data = trait.ratios, FUN = sem)
+
+by.trait <- by.trait[order(as.numeric(by.trait$Ratio)), ]
+by.trait.sem <- by.trait.sem[order(as.numeric(by.trait$Ratio)), ]
+
+plot(by.trait$Ratio, ylab = "Ratio (D/U+D)", xlab = "")
+mtext(side = 1, "Trait", line = 2.5)
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio +
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+arrows(x0 = seq(1:dim(by.trait)[1]), y0 = by.trait$Ratio, y1 = by.trait$Ratio -
+         by.trait.sem$Ratio, length = 0.01, angle = 90)
+
+abline(h = 0.5, lty = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_ASRBranchLength.png")
+grid.raster(img)
+
+```
+
+# Null Expectation
+```{r}
+
+rands <- sample(IMG.tree$edge[,1], 100)
+
+ratios <- rep(NA, 100)
+
+for (i in 1:length(ratios)){
+  x <- rands[i]
+  if(x == 2473){next()}
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+}
+
+mean(ratios)
+sem(ratios)
+
+Nnodes <- IMG.tree$Nnode
+Ntips <- length(IMG.tree$tip.label)
+
+ratios <- rep(NA, Nnodes - 1)
+
+for(i in 2:Nnodes){
+  x <- Ntips + i
+  down <- mean(IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)])
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratios[i] <- down/(up + down)
+  names(ratios)[i - 1] <- x
+}
+
+plot(sort(ratios))
+ratios2 <- ratios[order(as.numeric(names(ratios)))][-1]
+d.node <- dist.nodes(IMG.tree)[seq(Ntips + 2, Nnodes + Ntips), Ntips + 1]
+length(ratios2)
+length(d.node)
+plot(ratios2 ~ d.node, ylab = "Ratio (D/U+D)", xlab = "Time",
+          ylim = c(0,1), las = 1)
+
+mod <- lm(ratios2 ~ d.node)
+abline(mod)
+
+
+ratios <- data.frame(ratio = vector(), node = vector())
+
+for(i in 2:Nnodes){
+  x <- Ntips + i
+  down <- IMG.tree$edge.length[which(IMG.tree$edge[,1] == x)]
+  up   <- IMG.tree$edge.length[which(IMG.tree$edge[,2] == x)]
+  ratio <- down/(up + down)
+  node <- rep(x, length(ratio))
+  ratios <- rbind(ratios, cbind(ratio, node))
+}
+
+plot(sort(ratios$ratio))
+d.node <- dist.nodes(IMG.tree)[seq(Ntips + 2, Nnodes + Ntips), Ntips + 1]
+ratios$d.node <- NA
+
+for(i in 1:dim(ratios)[1]){
+  node.temp <- ratios$node[i]
+  d.temp <- d.node[which(as.numeric(names(d.node)) == node.temp)]
+  ratios$d.node[i] <- d.temp
+}
+
+max(ratios$d.node)
+ratios$d.node2 <- 4070 - ratios$d.node
+
+png(filename="../figures/GG_NullBranchLength.png",
+      width = 800, height = 800, res = 96*2)
+
+par(mar = c(4, 4, 1, 1) + 0.5)
+
+par(mar = c(4, 4, 1, 1) + 0.5)
+plot(ratios$ratio ~ ratios$d.node, 
+     ylab = "Ratio (D/U+D)", xlab = "",
+     ylim = c(0,1), las = 1, axes = F,
+     bg=rgb(0, 0, 1, 0.5), pch=21)
+axis(side = 1, at = c(1000, 2000, 3000, 4000), 
+     labels = c(4000, 3000, 2000, 1000))
+axis(side = 2, labels = T, las = 1)
+mtext(side = 1, "Time (mya)", line = 2.5)
+box(lwd = 1.5)
+
+mod <- lm(ratios$ratio ~ ratios$d.node)
+abline(mod)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_NullBranchLength.png")
+grid.raster(img)
+
+```
+
+## Rate Predictions
+```{r}
+IMG.ASR.r <- read.delim("../data/IMG_ASR.txt")
+
+source("../bin/TreeSimulationFxns.R")
+
+IMG.ASR.r$Alpha <- NA; IMG.ASR.r$Beta <- NA
+
+for(i in 1:dim(IMG.ASR.r)[1]){
+  temp <- unlist(xy_to_ab(x = -IMG.ASR.r$Rate1[i], y = -IMG.ASR.r$Rate2[i]))
+  IMG.ASR.r[i, ]$Alpha <- (1 - temp[1])
+  IMG.ASR.r[i, ]$Beta <- (1 - temp[2])
+}
+
+plot(IMG.ASR.r$Alpha)
+plot(IMG.ASR.r$Beta)
+
+
+
+plot(IMG.ASR.r$Alpha, IMG.ASR.r$Beta, xlim = c(0, 0.01))
+abline(0, 1)
+
+```
+
+
+```{r}
+
+# Plot
+png(filename="../figures/ASR_RatePredictions.png",
+    width = 1600, height = 800, res = 96*2)
+
+
+layout(matrix(1:2, 1, 2))
+par(mar = c(4, 4, 3, 1) + 0.5, oma = c(0, 1, 0, 0))
+plot(log10(na.omit(IMG.ASR.r$Alpha)),
+     axes = F, 
+     xlab = "", ylab = "",
+     bg=rgb(0, 0, 1, 0.5), pch=21)
+axis(side = 2, at = c(-6, -4, -2), labels = c(10^-6, 10^-4, 10^-2),
+     las = 1)
+axis(side = 1, labels = F)
+mtext(side = 1, "Pathway (not labeled)", line = 1)
+mtext(side = 2, "Predicted Parameter", line = 4)
+mtext(side = 3, text = "Alpha", line = 1, cex = 1.25)
+
+box(lwd = 1.5)
+
+
+plot(log10(na.omit(IMG.ASR.r$Beta)),
+     axes = F, 
+     xlab = "", ylab = "",
+     bg=rgb(0, 0, 1, 0.5), pch=21)
+axis(side = 2, at = c(-5, -4, -3), labels = c(10^-5, 10^-4, 10^-3),
+     las = 1)
+axis(side = 1, labels = F)
+mtext(side = 1, "Pathway (not labeled)", line = 1)
+mtext(side = 2, "Predicted Parameter", line = 4)
+mtext(side = 3, text = "Beta", line = 1, cex = 1.25)
+box(lwd = 1.5)
+
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("../figures/ASR_RatePredictions.png")
+grid.raster(img)
+
+```
+
+
+
+
+## Trait Types
+```{r}
+
+head(IMG.traits)[, 1:5]
+
+traits <- rownames(IMG.traits)
+trait.num <- rowSums(IMG.traits)
+
+disease <- unique(c(grep("cancer", traits), grep("disease", traits),
+                 grep("diabetes", traits), grep("losis", traits),
+                 grep("ALS", traits), grep("cholerae", traits),
+                 grep("plasmosis", traits)))
+
+carb.traits <- c(grep("Glycolysis", traits), grep("Citrate", traits),
+                 grep("Pentose", traits), grep("Fructose", traits),
+                 grep("Galactose", traits), grep("Ascorbate", traits),
+                 grep("sucrose", traits), grep("nucleotide sugar", traits),
+                 grep("Pyruvate", traits), grep("Glyoxylate", traits),
+                 grep("Propanoate", traits), grep("Butanoate", traits),
+                 grep("C5-Branched", traits), grep("Inositol", traits))
+traits[carb.traits]
+
+transport.traits <- grep("transport", traits)
+
+motility.traits <- c(grep("chemotaxis", traits), grep("motility", traits),
+                     grep("Flagellar", traits))
+
+photo.traits <- c(grep("Photosynthesis", traits))
+traits[photo.traits]
+
+dim(trait.sum)
+dim(IMG.traits)
+
+
+photo.sum <- trait.sum[trait.sum$Trait == photo.traits, ]
+photo.Cons <- IMG.Cons[sum(IMG.Cons$trait %in% photo.traits), ]
+
+unique(IMG.Cons$trait)[photo.traits[1]]
+
+IMG.Cons[IMG.Cons$trait %in% unique(IMG.Cons$trait)[transport.traits], ]
+
+
+carb.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[carb.traits], ]
+photo.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[photo.traits], ]
+
+motil.ASR <- IMG.ASR.r[gsub("\\.", " ", IMG.ASR.r$trait) %in% traits[motility.traits], ]
+
+round(mean(carb.ASR$Rate1), 5)
+round(mean(motil.ASR$Rate1), 5)
+
+mean(carb.ASR$Alpha)
+mean(motil.ASR$Alpha) / mean(photo.ASR$Alpha)
+
+mean(carb.ASR$Rate2)
+mean(motil.ASR$Rate2)
+
+
+carb.ratios <- trait.ratios[gsub("\\.", " ", trait.ratios$Trait) %in% traits[carb.traits], ]
+motil.ratios <- trait.ratios[gsub("\\.", " ", trait.ratios$Trait) %in% traits[motility.traits], ]
+
+
+aggregate(carb.ratios$Ratio ~ carb.ratios$Trait, FUN = mean)
+
+aggregate(motil.ratios$Ratio ~ motil.ratios$Trait, FUN = mean)
+
+aggregate(trait.ratios$Ratio ~ trait.ratios$Trait, FUN = mean)
+
+```
+
+# Genes
+## Create Gene Reference Database
+```{r}
+# Import Raw Data
+IMG.genes <- read.delim("../data/metagenome_predicted.txt", skip = 1, 
+                         row.names = 1)
+genes <- rownames(IMG.genes)
+length(genes)
+length(unique(genes))
+
+# Import Trait Database
+gene.database.temp <- read.table("../data/ko00001.keg", header = T, fill = T, comment.char = "#", quote = "", sep = "\t")
+
+A.level.index <- grep("A<b>", gene.database.temp$X.D)
+A.levels <- gsub("A<b>", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[A.level.index])))
+
+B.level.index <- grep("B  <b>", gene.database.temp$X.D)
+B.levels <- gsub("B  <b>", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[B.level.index])))
+
+C.level.index <- grep("C    ", gene.database.temp$X.D)
+C.levels <- gsub("C    ", "", 
+                 gsub("</b>", "",
+                      as.character(gene.database.temp$X.D[C.level.index]))) 
+
+D.level.index <- grep("D      K", gene.database.temp$X.D)
+D.levels <- gsub("D      K", "K", 
+                 as.character(gene.database.temp$X.D[D.level.index]))
+D.ko <- sapply(strsplit(D.levels , "  "), function(x) x[1])
+D.gene <- sapply(strsplit(D.levels , "  "), function(x) x[2])
+
+gene.table <- data.frame(matrix(NA, nrow = length(D.levels), ncol = 5))
+colnames(gene.table) <- c("A", "B", "C", "ko", "gene")
+gene.table$ko <- D.ko
+gene.table$gene <- D.gene
+
+A.ranges <- c(A.level.index, max(D.level.index))
+B.ranges <- c(B.level.index, max(D.level.index))
+C.ranges <- c(C.level.index, max(D.level.index))
+
+for(a in 1:length(A.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(A.ranges[a], A.ranges[a+1]))]
+  gene.table$A[D.level.index %in% temp] <- A.levels[a]
+}
+
+for(b in 1:length(B.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(B.ranges[b], B.ranges[b+1]))]
+  gene.table$B[D.level.index %in% temp] <- B.levels[b]
+}
+
+for(c in 1:length(C.level.index)){
+  temp <- D.level.index[which(as.numeric(D.level.index) 
+                              %in% seq(C.ranges[c], C.ranges[c+1]))]
+  gene.table$C[D.level.index %in% temp] <- C.levels[c]
+}
+  
+dim(gene.table)
+head(gene.table)
+
+# Remove Human Disease
+gene.table2 <- gene.table[-c(which(gene.table$A == "Human Diseases")), ]
+
+length(gene.table2$ko)
+length(unique(gene.table2$ko))
+gene.table2[duplicated(gene.table2$ko), ]
+```
+
+## ConsenTrait Gene Predictions
+```{r}
+# Import ConsenTrait Predictions
+cons.genes <- read.delim("../data/IMG_Genes_ConsenTrait.txt")
+
+dim(cons.genes)
+length(unique(cons.genes$trait))
+length(which(cons.genes$node == "Root"))
+
+root.cons <- cons.genes[which(cons.genes$node == "Root"), ]
+
+```
+
+# Supplemental Materials
+Description:
+
+## Edge Length Distribution
+```{r, results = "hide"}
+GG.edges <- GG$edge.length
+
+png(filename="../figures/GG_BranchLength.png",
+    width = 800, height = 800, res = 96*2)
+
+par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+
+hist(log10(GG.edges), main = "Green Genes: IMG Isolates",
+     axes = F, xlab = "", ylab = "", 
+     xlim = c(-4, 0), ylim = c(0, 800), 
+     col = "gray")
+
+
+axis(1, at = c(-4, -3, -2, -1, 0, 1), 
+     labels = expression(10^-4, 10^-3, 10^-2, 10^-1, 1, 10^1),  
+     las = 1, lwd = 1.5)
+axis(2, labels = T, las = 1, lwd = 1.5)
+
+mtext("Edge Length", side = 1, cex = 1.25, line = 2.5)
+mtext("Frequency", side = 2, cex = 1.25, line = 3.5)
+
+
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_BranchLength.png")
+grid.raster(img)
+```
+
+## Edge Length vs Support
+```{r}
+node.tab <- data.frame(matrix(NA, GG$Nnode, 5))
+colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
+node.tab$node <- as.numeric(c(1:GG$Nnode))
+node.tab$support <- GG$node.label
+node.tab[1,3] <- NA
+for (i in 2:GG$Nnode){
+  edge.up <- which(GG$edge[,2] == length(GG$tip.label) + i)
+  node.tab[i,3] <- GG$edge.length[edge.up]
+  edge.down <- which(GG$edge[,1] == length(GG$tip.label) + i)
+  node.tab[i,4] <- GG$edge.length[edge.down[1]]
+  node.tab[i,5] <- GG$edge.length[edge.down[2]]
+}
+
+node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
+
+scatterhist <- function(x, y, xlab="", ylab=""){
+  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
+  par(oma = c(1,1,1,1))
+  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
+  xhist = hist(x, plot=FALSE)
+  yhist = hist(y, plot=FALSE)
+  top = max(c(xhist$counts, yhist$counts))
+  par(mar=c(5,5,1,1))
+  plot(x,y, las = 1, xlab = "", ylab = "")
+  mtext(xlab, side=1, line=3, outer=F, cex = 1.25)
+  mtext(ylab, side=2, line=3, outer=F, cex = 1.25)
+  par(mar=c(0,5,1,1))
+  barplot(xhist$counts, axes=FALSE, space=0)
+  par(mar=c(5,0,1,1))
+  barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
+}
+```
+
+```{r, results = "hide"}
+png(filename="../figures/NodeSupport_GG.png",
+    width = 800, height = 800, res = 96*2)
+
+# Upstream
+scatterhist(x = log10(node.tab$edge_up), y = as.numeric(node.tab$support),
+            xlab = "Upstream Edge Length", ylab = "Node Support")
+
+# Downstream
+scatterhist(log10(node.tab$edge_down_min), as.numeric(node.tab$support),
+            xlab = "Downstream Edge Length", ylab = "Node Support")
+
+mean(as.numeric(node.tab$support), na.rm = T)
+mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -1.75]), na.rm = T)
+mean(as.numeric(node.tab$support[log10(node.tab$edge_up) > 0.75]), na.rm = T)
+mean(as.numeric(node.tab$support[log10(node.tab$edge_up) < -2.25]), na.rm = T)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/NodeSupport_GG.png")
+grid.raster(img)
+```
+
+## Branch Lenght Comparision
+```{r, results = "hide"}
+png(filename="../figures/GG_Branch_Comparision.png",
+    width = 800, height = 800, res = 96*2)
+
+reg <- GreenTree.r2$edge.length
+um <- GreenTree.um$edge.length
+
+# Are nodes the same?
+sum(GreenTree.r2$node.label != GreenTree.um$node.label)
+
+zero.branch <- which(reg == 0 | um == 0)
+reg.l <- log10(reg[-zero.branch]) + 2.5
+um.l <- log10(um[-zero.branch]) 
+
+mod1 <- lm(um.l ~ reg.l)
+summary(mod1)
+ttest(mod1, 2, 1)
+
+par(mar = c(6,6,1,1) + 0.1, oma = c(0.5,0.5,0.5,0.5))
+plot(reg.l, um.l, 
+     xlim = c(-2, 2.5), ylim = c(-1, 4),
+     axes=F, xlab = "", ylab = "")
+
+# abline(mod1, from = -2.5, to = 1.5, lty = 2, lwd = 2, col = "red")
+new <- data.frame(reg.l = seq(0, 3.2, 0.1))
+lines(x = t(new), y = predict(mod1, new), lty = 2, lwd = 2, col = "red")
+clip(min(reg.l), max(reg.l), min(um.l), max(um.l))
+abline(mod1$coefficients[1], 1, lty = 3, lwd = 2, col = "blue", untf = T)
+
+axis(side = 1, las = 1, at = c(seq(-3, 1, 1) + 2.5), 
+     labels = expression(10^-3, 10^-2, 10^-1, 1, 10^1))
+axis(side = 2, las = 1, at = c(seq(-5,3,2)), 
+     labels = expression(10^-5, 10^-3, 10^-1, 10^1, 10^3)) 
+
+legend("bottomright", legend = c("linear model", "isometric expectation", 
+                                 "slope t-test: p = < 0.001"), 
+       lty = c(2, 3, 0), col = c("red", "blue", "black"), 
+       bty = "n", cex = 0.6)
+
+mtext("Non-Ultrametic Branch Length\n(Substitution Rate)", side = 1,line = 4, cex = 1.25)
+mtext("Ultrametic Branch Length\n(Time)", side = 2, line = 3, cex = 1.25)
+
+box(lwd = 2)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+rm(mod1)
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_Branch_Comparision.png")
+grid.raster(img)
+```
+
+## Phylogeny Topological Features
+```{r}
+# This takes awhile, so you can turn it off
+
+if (run.all == TRUE){
+  tree.thres <- data.frame(matrix(NA, 100, 5))
+  colnames(tree.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
+  tree.thres$threshold <- seq(0.01, 0.15, length.out = 100)
+  tree.thres$threshold <- 10^c(seq(-3, 0, length.out = 100))
+  
+  um.thres <- data.frame(matrix(NA, 100, 5))
+  colnames(um.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
+  um.thres$threshold <- 10^c(seq(-3, 2, length.out = 100))
+  
+  phy1 <- GreenTree.r2
+  phy2 <- GreenTree.um
+  
+  for (i in 1:dim(tree.thres)[1]){
+    phy.grained <- di2multi2(phy1, tree.thres[i,1])
+    polys <- table(table(phy.grained$edge[,1]))
+    poly.size <- table(phy.grained$edge[,1])
+    tree.thres[i, 2] <- phy.grained$Nnode
+    tree.thres[i, 3] <- sum(polys[which(as.numeric(names(polys)) > 2)]) 
+    tree.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+    tree.thres[i, 5] <- length(poly.size[which(poly.size > 3)])
+  }
+  
+  for (i in 1:dim(um.thres)[1]){
+    phy.grained <- di2multi2(phy2, um.thres[i,1])
+    polys <- table(table(phy.grained$edge[,1]))
+    poly.size <- table(phy.grained$edge[,1])
+    um.thres[i, 2] <- phy.grained$Nnode
+    um.thres[i, 3] <- sum(polys[which(as.numeric(names(polys)) > 2)]) 
+    um.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+    um.thres[i, 5] <- length(poly.size[which(poly.size > 3)])
+  }
+}
+```
+
+```{r, results = "hide"}
+if (run.all == TRUE){
+  png(filename="../figures/GG_Tree_Topology.png",
+      width = 1600, height = 1600, res = 96*2)
+  
+  layout(matrix(1:6, 3))
+  par(mar = c(2,4,0.5,0.5), oma = c(3,1.5,3.5,1.5))
+  plot(tree.thres$nodes ~ log10(tree.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2,
+       xaxt = "n", ylim = c(0,2000))
+  axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
+  mtext("# Nodes", side = 2, line = 2.5)
+  mtext("Original Tree", side = 3, line = 1, outer = F)
+  box(lwd = 2)
+  plot(tree.thres$polytomies ~ log10(tree.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2, 
+       xaxt = "n", ylim = c(0,300))
+  axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
+  mtext("# Polytomies", side = 2, line = 2.5)
+  box(lwd = 2)
+  plot(log10(tree.thres$avg.polytomy) ~ log10(tree.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2, 
+       xaxt = "n", ylim = c(0,4))
+  axis(side = 1, at = seq(-3,0,1), labels = c(expression(10^-3, 10^-2, 10^-1, 1)))
+  mtext("Threshold (substitutions)", side =1, line = 2.5, cex = 1)
+  mtext("Average Polytomy Size", side = 2, line = 2.5)
+  box(lwd = 2)
+  
+  plot(um.thres$nodes ~ log10(um.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2,
+       xaxt = "n", ylim = c(0,3000), xlim = c(-3,2))
+  axis(side = 1, at = seq(-3,2,1), 
+       labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
+  mtext("# Nodes", side = 2, line = 2.5)
+  mtext("Ultrametric Tree", side = 3, line = 1, outer = F)
+  box(lwd = 2)
+  plot(um.thres$polytomies ~ log10(um.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2,
+       xaxt = "n", ylim = c(0,300), xlim = c(-3,2))
+  axis(side = 1, at = seq(-3,2,1), 
+       labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
+  mtext("# Polytomies", side = 2, line = 2.5)
+  box(lwd = 2)
+  plot(um.thres$avg.polytomy ~ log10(um.thres$threshold),
+       xlab = "", ylab = "", type = "l", lwd = 2,
+       xaxt = "n", ylim = c(0,15), xlim = c(-3,2))
+  axis(side = 1, at = seq(-3,2,1), 
+       labels = c(expression(10^-3, 10^-2, 10^-1, 1, 10^1, 10^2)))
+  mtext("Threshold (Ma)", side =1, line = 2.5, cex = 1)
+  mtext("Average Polytomy", side = 2, line = 2.5)
+  box(lwd = 2)
+  
+  
+  # Close Plot Device
+  dev.off()
+  graphics.off()
+  
+  # Clean Up
+}
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_Tree_Topology.png")
+grid.raster(img)
+```
+
+## Calculate Local Minimums from Edge Lengths and Maximum from Polytomies
+```{r}
+den.dis <- density(log10(GG.edges))
+mins <- peaks(den.dis$x, den.dis$y, mode = "min")
+maxs <- peaks(den.dis$x, den.dis$y, mode = "max")
+```
+
+## Obsever Polytomies through time
+```{r}
+if (run.all == TRUE){
+  time.thres <- data.frame(matrix(NA, 100, 4))
+  colnames(time.thres) <- c("threshold", "Nnodes", "Npolytomies", "avg.polytomy")
+  time.thres$threshold <- 10^c(seq(-3, -1, length.out = 100))
+  
+  thres.info <- vector(mode = "list", length = 100)
+  
+  phy1 <- GreenTree.r2
+  
+  for (i in 1:dim(time.thres)[1]){
+    phy.grained <- di2multi2(phy1, time.thres[i,1])
+    poly.size <- table(phy.grained$edge[,1])
+    polys <- table(table(phy.grained$edge[,1]))
+    time.thres[i, 2] <- phy.grained$Nnode
+    time.thres[i, 3] <- length(poly.size[which(poly.size > 2)])
+    time.thres[i, 4] <- mean(poly.size[which(poly.size > 2)])
+    aged <- node.age(phy.grained)
+    node.info <- data.frame(matrix(NA, 4, length(aged$node.label) - 1))
+    row.names(node.info) <- c("Nodes", "Node_Age", "Downstream_Branches",
+                                               "Length_Upstream")
+    node.info[1, ] <- as.numeric(aged$node.label[2:length(aged$node.label)])
+    tips <- length(aged$tip.label)
+    nodes <- aged$Nnode
+    node.info[2, ] <- as.numeric(aged$ages[(tips + 2):(tips + nodes)])
+    for (j in 2:length(aged$node.label)){
+      node.info[3, j - 1] <- as.numeric(length(which(aged$edge[, 1] == (tips + j))))
+      node.info[4, j - 1] <- as.numeric(aged$edge.length[which(aged$edge[ , 2] == (tips + j))])
+    }
+    thres.info[[i]] <- as.data.frame(t(as.matrix((node.info))))
+  }
+  
+  # Explore Node Ages with Threshold
+  # i = 80
+  # test <- as.data.frame(thres.info[[i]])
+  # plot(Node_Age ~ log10(Length_Upstream), 
+  #      data = test[which(test$Downstream_Branches > 2), ])
+  # legend("bottomleft",legend = paste("threshold =",
+  #        round(log10(time.thres$threshold[i]), 5)), 
+  #        bg = "gray", text.width = 0.5, box.col = "gray")
+}
+
+
+```
+
+## Polytomy Movie
+```{r}
+if (run.all == TRUE){
+  system("rm ../figures/movie/G*.png")
+  
+  threshold <- 10^c(seq(-3, -1, length.out = 50))
+  
+  for (i in threshold){
+    thres = i
+    outname <- paste("../figures/movie/G", round(thres, 4), ".png", sep = "")
+    test.phy <- di2multi3(phy1 = GreenTree.r2, phy2 = GreenTree.um, 
+                          tol = thres)
+    poly.node <- test.phy$multi.new
+    test.phy <- node.age(test.phy)
+    test.phy <- groupOTU(test.phy, groupInfo, group_name = "Domain")
+    levels(attributes(test.phy)$Domain) <- c("polytomy", names(groupInfo))
+    
+    test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular") 
+    test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, shape=18,
+                  colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+      theme_tree(legend.position="top", legend.key = element_rect(colour = NA)) + 
+      scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1, 2, 4, 3)]), 
+             labels = c("polytomy", "Archaea", "Cyanobacteria", "Other Bacteria")) + 
+      annotate("text", hjust = 0, x = max(test.phy$ages) * 0.05, 
+               y = length(test.phy$tip.label) * 0.95, 
+               label = paste("Threshold =", round(thres, 4)))
+    ggsave(outname, width = 6, height = 4, dpi = 250)
+    print(paste("Threshold", round(i, 4), "done"))
+  }
+  
+  rm(test.tree)
+  
+  system("convert -loop 10 -delay 100 '../figures/movie/*.png' '../figures/movie/GreenGenes.gif'")
+  system("rm ../figures/movie/G*.png")
+}
+```
+
+## Test Geological Window
+```{r}
+thres = 0.005
+
+test.phy <- di2multi3(phy1 = GreenTree.r2, phy2 = GreenTree.um, 
+                        tol = thres)
+poly.node <- test.phy$multi.new
+test.phy <- node.age(test.phy)
+test.phy <- groupOTU(test.phy, groupInfo, group_name = "Domain")
+levels(attributes(test.phy)$Domain) <- c("polytomy", names(groupInfo))
+  
+geo.test <- data.frame(xmin = 3200, xmax = 3600, ymin = -Inf, ymax = Inf)
+
+test.tree <- ggtree(test.phy, aes(color = Domain), layout="rectangular")
+
+test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3, 
+                        shape=18, colour=ggplotColours(n = 4)[1], 
+                        fill = "gray80") + 
+  theme_tree(legend.position="top", legend.key = element_rect(colour = NA)) + 
+  scale_color_manual(name = "", values=c(ggplotColours(n = 4)[c(1,2,4,3)]), 
+         labels = c("polytomy", "Archaea", "Cyanobacteria", "Other Bacteria")) + 
+  annotate("text", hjust = 0, x = max(test.phy$ages) * 0.05, 
+           y = length(test.phy$tip.label) * 0.95, 
+           label = paste("Threshold =", round(thres, 4))) + 
+  geom_rect(data = geo.test, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+              color="grey80", fill = "gray", alpha=0.5, inherit.aes = FALSE)
+
+rm(test.tree)
+```
+
