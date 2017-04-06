@@ -3,6 +3,7 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
 
   require("adephylo")||install.packages("adephylo");require("adephylo")
   require("phytools")||install.packages("phytools");require("phytools")
+  require("ape")||install.packages("ape");require("ape")
 
   # Import Tree and Root  if Needed
   if (is.rooted(tree) == FALSE){
@@ -24,7 +25,8 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
   root_tree$edge.length[root_tree$edge.length <= 0] = 0.00001
   
   root_tree$node.label.old <- root_tree$node.label
-  root_tree$node.label <- as.character(root_tree$edge[1:root_tree$Nnode, 1])
+  root_tree$node.label <- as.character(1:root_tree$Nnode + 
+                                         length(root_tree$tip.label))
 
   # ID all subtrees
   subtree <- subtrees(root_tree, wait = FALSE)
@@ -64,11 +66,12 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
         if (all(is.na(match_test))){
           positives <- c(positives,tip_names)
           node_positive <- subtree[[j]]$node.label[1]
-          cluster_dist <- distRoot(subtree[[j]], tip_names, method = c("p"))
-          cluster_size <- c(cluster_size, mean(cluster_dist))
-
-          cluster_size_tab[j + length(subtree) * (i - 2), ] <- c(i - 1, j, node_positive,
-                                     mean(cluster_dist), length(cluster_dist))
+          
+          rand_tips <- sample(tip_names, size = 5, replace = T)
+          cluster_dist <- distRoot(subtree[[j]], rand_tips, method = c("p"))
+          cluster_size <- length(subtree[[j]]$tip.label)
+          cluster_size_tab[j + length(subtree) * (i - 2), ] <- c(i - 1, j, 
+                               node_positive, mean(cluster_dist), cluster_size)
 
         } else {
           if (any(is.na(match_test))) {
