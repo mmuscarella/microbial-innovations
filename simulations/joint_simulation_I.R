@@ -22,6 +22,7 @@ mc.test <- matrix(NA, ncol = 4, nrow = dim(rep.comb)[1])
 tree <- Tree.sim(tips = 2000, std = 4000)
 
 for (i in 1:dim(mc.test)[1]){
+  print(paste("Simulation", i, "out of", dim(mc.test)[1], sep = " "))
   sim <- Trait.sim(tree = tree, x = rep.comb[i,1], y = rep.comb[i,2])
   tree <- sim$tree
   traits <- sim$traits
