@@ -187,7 +187,7 @@ fitMC2 <- function(phy, x, init.parms = c(0.5, 0.5),
 }
 
 # Fit Function from phytools
-fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
+fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, output.liks = F, ...) {
   if (hasArg(output.liks))
     output.liks <- list(...)$output.liks
   else output.liks <- FALSE

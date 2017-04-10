@@ -1,8 +1,9 @@
-rm(list=ls())
-setwd("~/GitHub/microbial-innovations/simulations")
+#rm(list=ls())
+#setwd("~/GitHub/microbial-innovations/simulations")
 source("../bin/TreeSimulationFxns.R")
 source("../bin/fitMC.R")
 source("../bin/ConsenTrait.R")
+library("methods")
 
 # Add Basic Functions
 se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
