@@ -27,6 +27,7 @@ for (i in 1:dim(mc.test)[1]){
   tree <- sim$tree
   traits <- sim$traits
   
+  if(sum(traits == "ON") > 0){
   # Run Ancestral State Reconstruction
   ASR <- fitMk(tree, traits, model = "ARD", 
                output.liks = TRUE, pi = c(0.001, 0.999))
@@ -35,6 +36,9 @@ for (i in 1:dim(mc.test)[1]){
   rates <- -ASR$rates
   mc.test[i, 1:2] <- c(rates[1], rates[2])
   #mc.test[i, 3:4] <- unlist(xy_to_ab(rates[1], rates[2]))
+  } else {
+    mc.test[i, 1:2] <- c(NA, NA)
+  }
 }
 
 # Plot Output
@@ -82,26 +86,27 @@ for (i in 1:dim(mc.test)[1]){
   attributes(tree)$seed <- NULL
   traits <- sim$traits
   
-  # Run Ancestral State Reconstruction
-  ASR <- ASRTrait(tree, traits)
-  ASR.r <- ASR$ASR
-  ASR.o <- ASR$Origins
-  
-  # Run ConsenTrait
-  trait.tab <- data.frame(names(traits), (traits == "On"))
-  CON <- ConsenTrait(tree = tree, traits = trait.tab)
-  
-  # Isolate Output
-  rates <- -ASR.r$rates
-  mc.test[i, 1:2] <- c(rep.comb[i,1], rep.comb[i,2])
-  mc.test[i, 3:4] <- c(rates[1], rates[2])
-  mc.test[i, 5] <- try(dim(ASR.o)[1])
-  mc.test[i, 6] <- try(mean(ASR.o$distance))
-  mc.test[i, 7] <- try(se(ASR.o$distance))
-  mc.test[i, 8] <- try(dim(CON)[1])
-  mc.test[i, 9] <- try(mean(CON$distance))
-  mc.test[i, 10] <- try(se(CON$distance))
-  
+  if(sum(traits == "ON") > 0){
+    # Run Ancestral State Reconstruction
+    ASR <- ASRTrait(tree, traits)
+    ASR.r <- ASR$ASR
+    ASR.o <- ASR$Origins
+    
+    # Run ConsenTrait
+    trait.tab <- data.frame(names(traits), (traits == "On"))
+    CON <- ConsenTrait(tree = tree, traits = trait.tab)
+    
+    # Isolate Output
+    rates <- -ASR.r$rates
+    mc.test[i, 1:2] <- c(rep.comb[i,1], rep.comb[i,2])
+    mc.test[i, 3:4] <- c(rates[1], rates[2])
+    mc.test[i, 5] <- try(dim(ASR.o)[1])
+    mc.test[i, 6] <- try(mean(ASR.o$distance))
+    mc.test[i, 7] <- try(se(ASR.o$distance))
+    mc.test[i, 8] <- try(dim(CON)[1])
+    mc.test[i, 9] <- try(mean(CON$distance))
+    mc.test[i, 10] <- try(se(CON$distance))
+  }
 }
 
 save.image(file = "joint_simulation_I.RData")
