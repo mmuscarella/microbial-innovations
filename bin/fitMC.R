@@ -324,3 +324,74 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
   class(obj) <- "fitMk"
   return(obj)
 }
+
+ASRTrait <- function(tree, traits, ...){
+  
+  # Test
+  sim <- Trait.sim(tree = tree, x = rep.comb[i,1], y = rep.comb[i,2])
+  tree <- sim$tree
+  attributes(tree)$seed <- NULL
+  traits <- sim$traits
+  
+  ASR <- fitMk(tree = tree, x = traits, model = "ARD", 
+               output.liks = TRUE, pi = c(0.001, 0.999))
+  
+  tree$node.label <- as.character(1:tree$Nnode + length(tree$tip.label))
+  root.dists <- as.matrix(dist.nodes(tree))[,length(tree$tip.label) + 1]
+
+  # ID all subtrees
+  subtree <- subtrees(tree, wait = FALSE)
+
+  # Initializing Results Table
+  y = rep(NA, (length(subtree)))
+  cluster_size_tab <- data.frame(trait = NA, subtree = NA, node = NA,
+                                 distance = NA, cluster_size = NA)
+
+  states <- c("Off", "On")
+  temp.edge <- as.data.frame(tree$edge)
+  colnames(temp.edge) <- c("Anc", "Des")
+  temp.edge$Len <- tree$edge.length
+  temp.edge$S.Anc <- NA
+  temp.edge$S.Des <- NA
+  temp.edge$R.Dist <- NA
+  for(j in 1:dim(ASR$lik.anc)[1]){
+    temp.state <- sample(states, size = 1, prob = abs(ASR$lik.anc[j, ]))
+    temp.node <- rownames(ASR$lik.anc)[j]
+    temp.edge$S.Anc[which(temp.edge$Anc == temp.node)] <- temp.state
+    temp.edge$S.Des[which(temp.edge$Des == temp.node)] <- temp.state
+  }
+  for(k in 1:dim(temp.edge)[1]){
+    temp.edge$R.Dist[k] <- root.dists[temp.edge$Des[k]]
+  }
+  evol <- temp.edge[which(temp.edge$S.Anc == "Off" & temp.edge$S.Des == "On"), ]
+  
+  evols <- evol$Des    
+  origins <- vector(mode = "character", length = 0)
+  positives <- vector(mode = "character", length = 0)
+  
+  # Loop through all subtrees and determine origins
+  for (j in 1:length(subtree)){
+    tip_names <- subtree[[j]]$tip.label
+    tree_name <- subtree[[j]]$name
+    if (tree_name %in% evols){
+      match_test <- match(tip_names, positives)
+      if (all(is.na(match_test))){
+        positives <- c(positives,tip_names)
+        origins <- c(origins, tree_name)
+        
+        rand_tips <- sample(tip_names, size = 5, replace = T)
+        cluster_dist <- distRoot(subtree[[j]], rand_tips, method = c("p"))
+        cluster_size <- length(subtree[[j]]$tip.label)
+        cluster_size_tab[j, ] <- c(1, j, tree_name, 
+                                   mean(cluster_dist), cluster_size)
+        
+      } else {
+        if (any(is.na(match_test))) {
+          print("some NAs - something is weird")
+        }
+      }
+    }
+  }
+  data.out <- cluster_size_tab[complete.cases(cluster_size_tab), ]
+  return(list(ASR = ASR, Origins = data.out))
+}

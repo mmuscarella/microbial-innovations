@@ -421,7 +421,8 @@ for(i in 1:dim(Gene.Origins)[1]){
 
 ## Origin Comparison
 ```{r}
-
+png(filename="../figures/GG_Origins.png",
+    width = 1000, height = 1000, res = 96*2)
 
 x = Gene.Origins$ASR.Mean
 y = Gene.Origins$CON.Mean
@@ -434,7 +435,16 @@ top = max(c(xhist$counts, yhist$counts))
 par(mar=c(5,6,1,1))
 plot(x,y, las = 1, xlab = "", ylab = "",
      xlim = c(0, 3500), ylim = c(0, 4100),
-     bg=rgb(0, 0, 1, 0.5), pch=21)
+     bg=rgb(0, 0, 1, 0.5), pch=21, axes = F)
+axis(side = 1, at = c(seq(0, 4000, 1000)), las = 1, tck = -0.03)
+axis(side = 2, at = c(seq(0, 4000, 1000)), las = 1, tck = -0.03)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 1, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 2, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+box(lwd = 1.5)
 mtext("ASR Origin (mya)", side=1, line=3, outer=F, cex = 1.5)
 mtext("ConsenTrait Origin (mya)", side=2, line=4, outer=F, cex = 1.5)
 par(mar=c(0,6,1,1))
@@ -442,80 +452,147 @@ barplot(xhist$counts[0:35], axes=FALSE, space=0, xlim = c(0, 35))
 par(mar=c(5,0,1,1))
 barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
 
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_Origins.png")
+grid.raster(img)
 ```
 
 
-## Core Genes
+## Multi Pathway Genes
 ```{r}
-max(table(gene.dictionary$ko))
+png(filename="../figures/GG_NumOrigins.png",
+    width = 1800, height = 900, res = 96*2)
 
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
 
+Single.Gene.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% single), ]
+x = Gene.Origins$ASR.Mean
+
+zones=matrix(c(2,0,5,0,1,3,4,6), ncol=4, byrow=TRUE)
+par(oma = c(6,6,3,1))
+layout(zones, widths=c(4/5,1/5,4/5,1/5), heights=c(1/5,4/5))
+
+# Single Pathway
+x = Gene.Origins$ASR.Mean[which(Gene.Origins$Gene %in% single)]
+y = Gene.Origins$CON.Mean[which(Gene.Origins$Gene %in% single)]
+
+xhist = hist(x, plot=FALSE, breaks = seq(0, 4100, 100))
+yhist = hist(y, plot=FALSE, breaks = xhist$breaks)
+top = max(c(xhist$counts, yhist$counts))
+par(mar=c(1,2,1,1))
+plot(x,y, las = 1, xlab = "", ylab = "",
+     xlim = c(0, 3500), ylim = c(0, 4100),
+     bg=rgb(0, 0, 1, 0.5), pch=21, axes = F)
+axis(side = 1, at = c(seq(0, 4000, 1000)), las = 1, tck = -0.03)
+axis(side = 2, at = c(seq(0, 4000, 1000)), las = 1, tck = -0.03)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 1, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 2, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+box(lwd = 1.5)
+mtext("ASR Origin (mya)", side=1, line=3, outer=T, cex = 1.5)
+mtext("ConsenTrait Origin (mya)", side=2, line=4, outer=F, cex = 1.5)
+par(mar=c(0,2,1,1))
+barplot(xhist$counts[0:35], axes=FALSE, space=0, xlim = c(0, 35))
+mtext(side = 3, "Single Pathway Gene", line = 1, cex = 1.5)
+par(mar=c(1,0,1,1))
+barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
+
+# Multiple Pathway
+x = Gene.Origins$ASR.Mean[which(Gene.Origins$Gene %in% multi)]
+y = Gene.Origins$CON.Mean[which(Gene.Origins$Gene %in% multi)]
+
+xhist = hist(x, plot=FALSE, breaks = seq(0, 4100, 100))
+yhist = hist(y, plot=FALSE, breaks = xhist$breaks)
+top = max(c(xhist$counts, yhist$counts))
+par(mar=c(1,2,1,1))
+plot(x,y, las = 1, xlab = "", ylab = "",
+     xlim = c(0, 3500), ylim = c(0, 4100),
+     bg=rgb(0, 0, 1, 0.5), pch=21, axes = F)
+axis(side = 1, at = c(seq(0, 4000, 1000)), las = 1, tck = -0.03)
+axis(side = 2, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.03)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = -0.01)
+axis(side = 1, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 2, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 3, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+axis(side = 4, at = c(seq(0, 4000, 1000)), labels = F, las = 1, tck = 0.01)
+box(lwd = 1.5)
+#mtext("ASR Origin (mya)", side=1, line=3, outer=F, cex = 1.5)
+#mtext("ConsenTrait Origin (mya)", side=2, line=4, outer=F, cex = 1.5)
+par(mar=c(0,2,1,1))
+barplot(xhist$counts[0:35], axes=FALSE, space=0, xlim = c(0, 35))
+mtext(side = 3, "Multi Pathway Gene", line = 1, cex = 1.5)
+par(mar=c(1,0,1,1))
+barplot(yhist$counts, axes=FALSE, space=0, horiz=TRUE)
+
+# Close Plot Device
+dev.off()
+graphics.off()
+#```
+## Show Plot
+#```{r}
+img <- readPNG("../figures/GG_NumOrigins.png")
+grid.raster(img)
 ```
 
-
-plot(Gene.ASR3$y, Gene.Cons3$trait.mean)
-
-plot(log(-Gene.ASR3$x), log(-Gene.ASR3$y))
-```
-
-# Nitrogen Genes
+# Cell Cycle Gene Pathways
 ```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
 temp <- unique(gene.dictionary$C)
-N.pathway <- temp[grep("Nitrogen", temp)]
-Nitrogen.Table <- gene.dictionary[which(gene.dictionary$C == N.pathway), ]
-N.Genes <- Nitrogen.Table$ko
+Cell.pathway <- temp[grep("Cell cycle", temp)]
+Cell.Table <- gene.dictionary[which(gene.dictionary$C %in% Cell.pathway), ]
+Cell.Table.S <- Cell.Table[which(Cell.Table$ko %in% single), ]
+Cell.Genes <- Cell.Table.S$ko
+Cell.Names <- Cell.Table.S$gene
 
-N.ASR <- Gene.ASR3[which(Gene.ASR3$gene %in% N.Genes), ]
-N.Cons <- Gene.Cons3[which(Gene.Cons3$gene %in% N.Genes), ]
+Cell.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% Cell.Genes), ]
 
-N.ASR$name <- NA
-for(i in 1:dim(N.ASR)[1]){
-  temp <- gene.dictionary$gene[which(gene.dictionary$ko == N.ASR$gene[i])]
-  temp2 <- strsplit(temp, ";")[[1]][1]
-  N.ASR$name[i] <- temp2
-}
-
-
-```
-
-## Plot
-```{r}
 layout(matrix(1:2, 1, 2), widths = c(3, 1))
 par(mar = c(5, 6, 2, 0))
 
-plot(x = N.ASR$trait.mean, y = 1:dim(N.ASR)[1], 
+plot(x = Cell.Origins$ASR.Mean, y = 1:dim(Cell.Origins)[1], 
      pch = 22, bg = "gray", cex = 3, type = "n",
      axes = F, xlab = "", ylab = "",
-     xlim = c(4000, 0), ylim = c(0.5, dim(N.ASR)[1] + 0.5))
-arrows(x0 = N.ASR$trait.mean, 
-       x1 = N.ASR$trait.mean + N.ASR$trait.se, 
-      y0 = 1:dim(N.ASR)[1], angle = 90, length = 0.05, lwd = 1.5)
-arrows(x0 = N.ASR$trait.mean, 
-       x1 = N.ASR$trait.mean - N.ASR$trait.se, 
-      y0 = 1:dim(N.ASR)[1], angle = 90, length = 0.05, lwd = 1.5)
-points(x = N.ASR$trait.mean, y = 1:dim(N.ASR)[1], 
-     pch = 22, bg = "gray", cex = 3, lwd = 1.5)
+     xlim = c(4000, 0), ylim = c(0.5, dim(Cell.Origins)[1] + 0.5))
+arrows(x0 = Cell.Origins$ASR.Mean, 
+       x1 = Cell.Origins$ASR.Mean + Cell.Origins$ASR.SE, 
+      y0 = 1:dim(Cell.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = Cell.Origins$ASR.Mean, 
+       x1 = Cell.Origins$ASR.Mean - Cell.Origins$ASR.SE, 
+      y0 = 1:dim(Cell.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = Cell.Origins$ASR.Mean, y = 1:dim(Cell.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
 
 
-arrows(x0 = N.Cons$trait.mean, 
-       x1 = N.Cons$trait.mean + N.Cons$trait.se, 
-      y0 = 1:dim(N.Cons)[1], 
-      angle = 90, length = 0.1, lwd = 1.5, col = "red")
-arrows(x0 = N.Cons$trait.mean, 
-       x1 = N.Cons$trait.mean - N.Cons$trait.se, 
-      y0 = 1:dim(N.Cons)[1], 
-      angle = 90, length = 0.1, lwd = 1.5, col = "red")
-points(x = N.Cons$trait.mean, y = 1:dim(N.Cons)[1], 
-     pch = 22, bg = "gray", cex = 1.5, lwd = 1.5, col = "red")
+arrows(x0 = Cell.Origins$CON.Mean, 
+       x1 = Cell.Origins$CON.Mean + Cell.Origins$CON.SE, 
+      y0 = 1:dim(Cell.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = Cell.Origins$CON.Mean, 
+       x1 = Cell.Origins$CON.Mean - Cell.Origins$CON.SE, 
+      y0 = 1:dim(Cell.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = Cell.Origins$CON.Mean, y = 1:dim(Cell.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
 
 axis(side = 1, labels = T, lwd.ticks = 1.5)
-axis(side = 2, labels = c(N.ASR$name), 
-     at = 1:dim(N.ASR)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = c(Cell.Origins$Name), 
+     at = 1:dim(Cell.Origins)[1], las = 1, lwd.ticks = 1.5)
 axis(side = 4, labels = F, 
-     at = 1:dim(N.ASR)[1], las = 1, lwd.ticks = 1.5)
-axis(side = 2, labels = F, at = 1:dim(N.ASR)[1], 
+     at = 1:dim(Cell.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(Cell.Origins)[1], 
      tck = 0.02, lwd.ticks = 1.5)
-axis(side = 4, labels = F, at = 1:dim(N.ASR)[1], 
+axis(side = 4, labels = F, at = 1:dim(Cell.Origins)[1], 
      tck = 0.02, lwd.ticks = 1.5)
 mtext("Gene", side = 2, line = 4, cex = 1.5)
 mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
@@ -523,18 +600,647 @@ box(lwd = 1.5)
 
 par(mar = c(5, 0, 2, 1))
 plot(0, axes = F, xlab = "", ylab = "", type = "n",
-     xlim = c(0, 1), ylim = c(0.5, dim(N.ASR)[1] + 0.5))
-text(x = 0.5, y = 1:dim(N.ASR)[1]+0.2, 
-     labels = as.character(round(-N.ASR$x, 6)), cex = 0.75)
-text(x = 0.5, y = 1:dim(N.ASR)[1]-0.2, 
-     labels = as.character(round(-N.ASR$y, 6)), cex = 0.75)
-text(x = 0.5, y = dim(N.ASR)[1] + 0.75,
-     labels = "Rates (X/Y)", xpd = T)
-
-
-
-
+     xlim = c(0, 1), ylim = c(0.5, dim(Cell.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(Cell.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-Cell.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(Cell.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-Cell.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(Cell.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
 ```
+
+# Nitrogen Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$C)
+temp.pathway <- temp[grep("Nitrogen", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$C %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+
+# Sulfur Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$C)
+temp.pathway <- c(temp[grep("Sulfur", temp)])
+temp.Table <- gene.dictionary[which(gene.dictionary$C %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp <- unique(gene.dictionary$gene)
+temp.pathway <- c(temp[grep("dms[A-Z]", temp)], temp[grep("tus[A-Z]", temp)])
+temp.Table <- gene.dictionary[which(gene.dictionary$gene %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+
+# Methane Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$C)
+temp.pathway <- temp[grep("Methane", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$C %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+# Propanoate Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$C)
+temp.pathway <- temp[grep("Propanoate", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$C %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+# Benzoate Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$C)
+temp.pathway <- temp[grep("oate degradation", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$C %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+
+# Urea Transport Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$gene)
+temp.pathway <- temp[grep("urt[A-Z]", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$gene %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+
+# Urea Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$gene)
+temp.pathway <- temp[grep("ur[e,t][A-Z]", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$gene %in% temp.pathway), ]
+temp.Table.S <- temp.Table# [which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+# Nitrogen Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$gene)
+temp.pathway <- temp[grep("n[a,i,o][r,k,p,s][A-Z]", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$gene %in% temp.pathway), ]
+temp.Table.S <- temp.Table# [which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+temp.Origins$Name
+
+
+temp.Origins2 <- temp.Origins[grep("n[arG, apA, irK, irS, orB, osZ]", temp.Origins$Name), ]
+
+temp.Origins$Name[grep("n[irS,irK]", temp.Origins$Name)]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.65, "Great Oxidation")
+
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+# Nitrogen Genes
+```{r}
+multi <- names(which(table(gene.dictionary$ko) > 1))
+single <- names(which(table(gene.dictionary$ko) == 1))
+temp <- unique(gene.dictionary$gene)
+temp.pathway <- temp[grep("ps[a,b][A-Z];", temp)]
+temp.Table <- gene.dictionary[which(gene.dictionary$gene %in% temp.pathway), ]
+temp.Table.S <- temp.Table[which(temp.Table$ko %in% single), ]
+temp.Genes <- temp.Table.S$ko
+temp.Names <- temp.Table.S$gene
+
+temp.Origins <- Gene.Origins[which(Gene.Origins$Gene %in% temp.Genes), ]
+
+layout(matrix(1:2, 1, 2), widths = c(3, 1))
+par(mar = c(5, 6, 2, 0))
+
+plot(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 3, type = "n",
+     axes = F, xlab = "", ylab = "",
+     xlim = c(4000, 0), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean + temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+arrows(x0 = temp.Origins$ASR.Mean, 
+       x1 = temp.Origins$ASR.Mean - temp.Origins$ASR.SE, 
+      y0 = 1:dim(temp.Origins)[1], angle = 90, length = 0.05, lwd = 1.5)
+points(x = temp.Origins$ASR.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5)
+
+abline(v = 2450, lty = 2, lwd = 1, col = "gray")
+abline(v = 1850, lty = 2, lwd = 1, col = "gray")
+text(x = 2150, y = dim(temp.Origins)[1] + 0.85, "Great Oxidation")
+
+
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean + temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+arrows(x0 = temp.Origins$CON.Mean, 
+       x1 = temp.Origins$CON.Mean - temp.Origins$CON.SE, 
+      y0 = 1:dim(temp.Origins)[1], 
+      angle = 90, length = 0.05, lwd = 1.5, col = "red")
+points(x = temp.Origins$CON.Mean, y = 1:dim(temp.Origins)[1], 
+     pch = 22, bg = "gray", cex = 2, lwd = 1.5, col = "red")
+
+axis(side = 1, labels = T, lwd.ticks = 1.5)
+axis(side = 2, labels = c(temp.Origins$Name), 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 4, labels = F, 
+     at = 1:dim(temp.Origins)[1], las = 1, lwd.ticks = 1.5)
+axis(side = 2, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+axis(side = 4, labels = F, at = 1:dim(temp.Origins)[1], 
+     tck = 0.02, lwd.ticks = 1.5)
+mtext("Gene", side = 2, line = 4, cex = 1.5)
+mtext("Age (mya)", side = 1, line = 3, cex = 1.5)
+box(lwd = 1.5)
+
+par(mar = c(5, 0, 2, 1))
+plot(0, axes = F, xlab = "", ylab = "", type = "n",
+     xlim = c(0, 1), ylim = c(0.5, dim(temp.Origins)[1] + 0.5))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]+0.2, cex = 0.75,
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$X * 1000, 4))))
+text(x = 0.5, y = 1:dim(temp.Origins)[1]-0.2, cex = 0.75, 
+     labels = as.character(sprintf("%.4f", round(-temp.Origins$Y * 1000, 4))))
+text(x = 0.5, y = dim(temp.Origins)[1] + 0.75,
+     labels = "Rates (X/Y); x 1000", xpd = T)
+```
+
+
+
 
 
 
