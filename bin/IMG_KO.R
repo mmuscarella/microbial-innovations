@@ -52,7 +52,7 @@ img.kegg <-data.frame(matrix(NA, ncol = length(KEGG.KO) + 2, nrow = length(files
 colnames(img.kegg) <- c("Genome", "OID", KEGG.KO)
 
 for (i in 1:length(files)){
-  temp <- read.delim(paste(output_location, files[i], sep = ""))
+  temp <- read.delim(paste(output_location, files[i], sep = ""), , quote = "")
   temp.ko <- gsub("KO:", "", temp[,10])
   abund.ko <- table(temp.ko)
   genome <- genomes[which(genomes$OID == unlist(strsplit(files[i], "/"))[1]), ]
