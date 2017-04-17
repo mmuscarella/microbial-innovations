@@ -14,15 +14,16 @@
 #
 ################################################################################
 
-# Import Genome IDs
+# System Specific Information
 sys <- Sys.info()
-
 if(sys[1] == "Darwin"){
-  genomes.raw <- list.files(path = "~/Desktop/output", pattern = "tar.gz")
+  output_location <- "~/Desktop/output/"
 } else {
-  genomes.raw <- list.files(path = "~/JGI/output", pattern = "tar.gz")
+  output_location <- "~/JGI/output/"
 }
 
+# Import Genome IDs
+genomes.raw <- list.files(path = output_location, pattern = "tar.gz")
 genomes <- as.data.frame(matrix(NA, ncol = 2, nrow = length(genomes.raw)))
 colnames(genomes) <- c("Genome", "OID")
 for (i in 1:length(genomes.raw)){
@@ -46,12 +47,12 @@ KEGG.KO <- sort(unique(D.ko), decreasing = F)
 
 
 # Create KEGG Database for Genomes
-files <- list.files(path = "~/Desktop/output", pattern = "ko.tab.txt", recursive= T)
+files <- list.files(path = output_location, pattern = "ko.tab.txt", recursive= T)
 img.kegg <-data.frame(matrix(NA, ncol = length(KEGG.KO) + 2, nrow = length(files)))
 colnames(img.kegg) <- c("Genome", "OID", KEGG.KO)
 
 for (i in 1:length(files)){
-  temp <- read.delim(paste("~/Desktop/output/",files[i], sep = ""))
+  temp <- read.delim(paste(output_location, files[i], sep = ""))
   temp.ko <- gsub("KO:", "", temp[,10])
   abund.ko <- table(temp.ko)
   genome <- genomes[which(genomes$OID == unlist(strsplit(files[i], "/"))[1]), ]
