@@ -93,20 +93,26 @@ while IFS=$'\t' read -r -a myArray ; do
       if [[ $( echo "$data" | wc -l ) == 1 ]] ; then
         echo "Single IMG Entry" | $out
         data_url=$( echo $data | grep -o 'url.*tar.gz\"' | sed $'s/url=\"//' \
-                          | sed $'s/\"//' | sed $'s/\&amp;/\&/' )
+                          | sed $'s/\"//g' | sed $'s/\&amp;/\&/' )
         data_url=${data_url%$'\r'}
         data_name="$DB.$( echo $data_url | rev | cut -d'/' -f 1 | rev )"
-        curl "http://genome.jgi.doe.gov$data_url" -b cookies > ./output/img/$data_name
+        if [[ ! -e ./output/img/$data_name ]] ; then
+          echo "Not Found"
+          curl "http://genome.jgi.doe.gov$data_url" -b cookies > ./output/img/$data_name
+        fi
 
       else
         echo "Multiple IMG Entries" | $out
         #timestamp=$( echo "$gbk" | grep -o -P 'timestamp=\"(.*?)\"' )
         data_url=$( echo $data | grep -o 'url.*tar.gz\"' | sed $'s/url=\"//' \
-                          | sed $'s/\"//' | sed $'s/\&amp;/\&/' )
+                          | sed $'s/\"//g' | sed $'s/\&amp;/\&/' )
         data_url=$( echo "$data_url" | head -n1 )
         data_url=${data_url%$'\r'}
         data_name="$DB.$( echo $data_url | rev | cut -d'/' -f 1 | rev )"
-        curl "http://genome.jgi.doe.gov$data_url" -b cookies > ./output/img/$data_name
+        if [ ! -e ./output/img/$data_name ] ; then
+          echo "Not Found"
+          curl "http://genome.jgi.doe.gov$data_url" -b cookies > ./output/img/$data_name
+        fi
       fi
     else
       echo "No IMG Files Found for $DB"  | $out
@@ -119,7 +125,7 @@ while IFS=$'\t' read -r -a myArray ; do
   fi
 
   # Sleep to prevent overdoing it on server
-  sleep 60
+  sleep 10
 
 done < ./JGImatch.txt
 

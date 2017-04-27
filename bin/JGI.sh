@@ -11,7 +11,12 @@
 #
 ################################################################################
 
-sed $'s/\t\t/\tNA\t/g' taxontable64227_17-apr-2017.xls | sed $'s/\t\t/\tNA\t/g' | sed $'s/\t\t/\tNA\t/g' > taxontable.txt
+sed $'s/\t\t/\tNA\t/g' taxontable64227_17-apr-2017.xls | sed $'s/\t\t/\tNA\t/g' | sed $'s/\t\t/\tNA\t/g' > bacteriataxontable.txt
+
+sed $'s/\t\t/\tNA\t/g' taxontable32958_18-apr-2017.xls | sed $'s/\t\t/\tNA\t/g' | sed $'s/\t\t/\tNA\t/g' > archaeataxontable.txt
+
+cat bacteriataxontable.txt > taxontable.txt
+awk FNR-1 archaeataxontable.txt >> taxontable.txt
 
 out="tee -a JGI_DB.logfile"
 
@@ -49,7 +54,7 @@ while IFS=$'\t' read -r -a myArray ; do
   fi
 
   # Sleep to prevent overdoing it on server
-  sleep 60
+  sleep 10
 
 done < ./taxontable.txt
 

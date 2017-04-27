@@ -8,17 +8,19 @@
 # Last Update: 2017 04 17
 #
 # Goals:
-#       1. 
-#       2. 
-#       3. 
+#       1.
+#       2.
+#       3.
 #
 ################################################################################
 
 # System Specific Information
 sys <- Sys.info()
 if(sys[1] == "Darwin"){
+  setwd("~/GitHub/microbial-innovations/bin")
   output_location <- "~/Desktop/output/"
 } else {
+  setwd("~/microbial-innovations/bin")
   output_location <- "~/JGI/output/"
 }
 
@@ -33,13 +35,13 @@ for (i in 1:length(genomes.raw)){
 }
 
 # Import KEGG Database
-gene.database.temp <- read.table("../data/ko00001.keg", header = T, 
-                                 fill = T, comment.char = "#", 
+gene.database.temp <- read.table("../data/ko00001.keg", header = T,
+                                 fill = T, comment.char = "#",
                                  quote = "", sep = "\t")
 
 # Oranize KEGG Genes and KO
 D.level.index <- grep("D      K", gene.database.temp$X.D)
-D.levels <- gsub("D      K", "K", 
+D.levels <- gsub("D      K", "K",
                  as.character(gene.database.temp$X.D[D.level.index]))
 D.ko <- sapply(strsplit(D.levels , "  "), function(x) x[1])
 D.gene <- sapply(strsplit(D.levels , "  "), function(x) x[2])
@@ -52,7 +54,7 @@ img.kegg <-data.frame(matrix(NA, ncol = length(KEGG.KO) + 2, nrow = length(files
 colnames(img.kegg) <- c("Genome", "OID", KEGG.KO)
 
 for (i in 1:length(files)){
-  temp <- read.delim(paste(output_location, files[i], sep = ""), , quote = "")
+  temp <- read.delim(paste(output_location, files[i], sep = ""), quote = "")
   temp.ko <- gsub("KO:", "", temp[,10])
   abund.ko <- table(temp.ko)
   genome <- genomes[which(genomes$OID == unlist(strsplit(files[i], "/"))[1]), ]
@@ -65,5 +67,16 @@ for (i in 1:length(files)){
 # Save KEGG Database
 write.table(img.kegg, file = "../data/IMG.KEGG.txt", quote = F, sep = "\t",
             row.names = F, col.names = T)
-  
-  
+
+# Create 16S Database for Genomes
+files <- list.files(path = output_location, pattern = ".gff", recursive= T)
+img.16S <-data.frame(matrix(NA, ncol = 3, nrow = length(files)))
+colnames(img.kegg) <- c("Genome", "OID", "16S")
+
+for (i in 1:length(files)){
+  temp <- read.delim(paste(output_location, files[i], sep = ""), quote = "",
+                     head = F, skip = 1, sep = "\n")
+  grep("rRNA.*product=16S", temp, perl = T)
+  grep("rRNA.*product=16S", readLines(paste(output_location, files[i], sep = "")))
+  temp[817 - 1, ]
+  temp[898 - 1, ]
