@@ -1,5 +1,6 @@
 #rm(list=ls())
 #setwd("~/GitHub/microbial-innovations/simulations")
+setwd("~/microbial-innovations/simulations")
 source("../bin/TreeSimulationFxns.R")
 source("../bin/fitMC.R")
 source("../bin/ConsenTrait.R")
@@ -27,7 +28,7 @@ for (i in 1:dim(mc.testA)[1]){
   tree <- sim$tree
   traits <- sim$traits
   
-  if(sum(traits == "ON") > 0){
+  if(sum(traits == "On") > 0 & sum(traits == "On") < length(traits)){
   # Run Ancestral State Reconstruction
   ASR <- fitMk(tree, traits, model = "ARD", 
                output.liks = TRUE, pi = c(0.001, 0.999))
@@ -47,8 +48,8 @@ for (i in 1:dim(mc.testA)[1]){
 
 #layout(matrix(1:2, ncol = 2, byrow = T))
 #par(mar= c(3,3,1,1))
-#plot(y = log10(-mc.testA[, 1]), x = log10(-rep.comb[, 1]),
-#     xlab = "True X Rate (log10)", ylab = "Predicted X Rate (log10)")
+plot(y = log10(-mc.testA[, 1]), x = log10(-rep.comb[, 1]),
+     xlab = "True X Rate (log10)", ylab = "Predicted X Rate (log10)")
 
 #abline(0, 1)
 
