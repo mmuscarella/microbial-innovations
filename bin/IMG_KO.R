@@ -24,14 +24,19 @@ if(sys[1] == "Darwin"){
   output_location <- "~/JGI/output/"
 }
 
+# Genome Location
+output_location <- "~/JGI/output/"
+
+
 # Import Genome IDs
-genomes.raw <- list.files(path = output_location, pattern = "tar.gz")
+genomes.raw <- list.files(path = paste(output_location, "img/", sep = ""), 
+                          pattern = "tar.gz")
 genomes <- as.data.frame(matrix(NA, ncol = 2, nrow = length(genomes.raw)))
 colnames(genomes) <- c("Genome", "OID")
 for (i in 1:length(genomes.raw)){
   temp <- unlist(strsplit(genomes.raw[i], split = "[.]"))
   genomes$Genome[i] <- gsub("_FD", "", temp[1])
-  genomes$OID[i] <- temp[2]
+  genomes$OID[i] <- gsub("^[0-9]*\\-", "", temp[2])
 }
 
 # Import KEGG Database
@@ -58,9 +63,15 @@ for (i in 1:length(files)){
   temp.ko <- gsub("KO:", "", temp[,10])
   abund.ko <- table(temp.ko)
   genome <- genomes[which(genomes$OID == unlist(strsplit(files[i], "/"))[1]), ]
+  print(dim(genome))
+  if(dim(genome)[1] == 0){
+    genome <- c("Genome" = NA, "OID" = NA)
+  }
+  print(genome)
   img.kegg[i, 1:2] <- as.vector(genome)
   img.ko <- as.vector(abund.ko[match(KEGG.KO, names(abund.ko))])
   img.ko[is.na(img.ko)] <- 0
+  print(dim(img.ko))
   img.kegg[i , 3:dim(img.kegg)[2]] <- img.ko
 }
 
