@@ -328,10 +328,10 @@ fitMk <- function (tree, x, model = "SYM", fixedQ = NULL, ...) {
 ASRTrait <- function(tree, traits, ...){
   
   # Test
-  sim <- Trait.sim(tree = tree, x = rep.comb[i,1], y = rep.comb[i,2])
-  tree <- sim$tree
-  attributes(tree)$seed <- NULL
-  traits <- sim$traits
+  #sim <- Trait.sim(tree = tree, x = rep.comb[i,1], y = rep.comb[i,2])
+  #tree <- sim$tree
+  #attributes(tree)$seed <- NULL
+  #traits <- sim$traits
   
   ASR <- fitMk(tree = tree, x = traits, model = "ARD", 
                output.liks = TRUE, pi = c(0.001, 0.999))
