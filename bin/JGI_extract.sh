@@ -35,7 +35,7 @@ total_partial=0
 total_full=0
 cat /dev/null > JGI.fasta
 echo -e "Genome\tFullLength\tPartialLength" > JGIseqs.txt
-echo -e "Sequence\tGenomeName\tGenome" > JGIseqMatch.txt
+echo -e "name\tGenomeName\tGenome" > JGIseqMatch.txt
 
 for i in $gff ; do
   echo $i
@@ -67,7 +67,7 @@ for i in $gff ; do
       total_full=$(($total_full + 1))
       full=$(($full + 1))
       echo "$seq" >> JGI.fasta
-      echo "$id\t$name\t$genome" >> JGIseqMatch.txt
+      echo -e "$id\t$name\t$genome" >> JGIseqMatch.txt
     else
       echo NO
       total_partial=$((total_partial + 1))
