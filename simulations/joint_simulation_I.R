@@ -5,6 +5,7 @@ source("../bin/TreeSimulationFxns.R")
 source("../bin/fitMC.R")
 source("../bin/ConsenTrait.R")
 library("methods")
+library("adephylo")
 
 # Add Basic Functions
 se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
