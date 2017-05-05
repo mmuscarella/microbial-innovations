@@ -157,7 +157,7 @@ for (i in 1:dim(mc.testB)[1]){
   mc.testB[i, 5] <- sum(traits == "On")
   mc.testB[i, 6] <- sum(traits == "Off")
   
-  if(sum(traits == "On") > 2){
+  if(sum(traits == "On") > 2 & sum(traits == "Off") > 2){
     # Run Ancestral State Reconstruction
     ASR <- ASRTrait(tree, traits)
     ASR.r <- ASR$ASR
@@ -177,7 +177,7 @@ for (i in 1:dim(mc.testB)[1]){
     mc.testB[i, 11] <- try(mean(CON$distance))
     mc.testB[i, 12] <- try(se(CON$distance))
     } else {
-    mc.testB[i, 3:4] <- c(NA, NA)
+    mc.testB[i, c(3:4, 7:12)] <- NA
   }
 }
 
