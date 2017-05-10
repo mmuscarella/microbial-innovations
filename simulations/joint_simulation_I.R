@@ -135,14 +135,18 @@ grid.raster(img)
 # Simulation 2: How does 1st Evolution Change with X
 test.x <- c(-0.2, -0.02, -0.002, -0.0002, -0.00002, -0.000002)
 test.y <- c(-0.2, -0.02, -0.002, -0.0002, -0.00002, -0.000002)
+
+test.x <- c(-2, -1, -0.5, -0.1, -0.2, -0.05, -0.02, -0.002)
+test.y <- c(-2, -1, -0.5, -0.1, -0.2, -0.05, -0.02, -0.002)
+
 test.comb <- data.frame(expand.grid(X = test.x, Y = test.y))
-rep.comb <- data.frame(test.comb[rep(seq_len(nrow(test.comb)), each=10),])
+rep.comb <- data.frame(test.comb[rep(seq_len(nrow(test.comb)), each=5),])
 rownames(rep.comb) <- NULL
 
-mc.testB <- data.frame(matrix(NA, ncol = 12, nrow = dim(rep.comb)[1]))
+mc.testB <- data.frame(matrix(NA, ncol = 14, nrow = dim(rep.comb)[1]))
 colnames(mc.testB) <- c("X", "Y", "X.P", "Y.P", "L.On", "L.Off", 
-                       "ASR.Origins", "ASR.Mean", "ASR.SE",
-                       "Con.Origins", "Con.Mean", "Con.SE")
+                       "ASR.Origins", "ASR.Mean", "ASR.SE", "ASR.max",
+                       "Con.Origins", "Con.Mean", "Con.SE", "Con.max")
 
 tree <- Tree.sim(tips = 2000, std = 4000)
 
@@ -171,11 +175,15 @@ for (i in 1:dim(mc.testB)[1]){
     rates <- -ASR.r$rates
     mc.testB[i, 3:4] <- c(rates[1], rates[2])
     mc.testB[i, 7] <- try(dim(ASR.o)[1])
-    mc.testB[i, 8] <- try(mean(ASR.o$distance))
-    mc.testB[i, 9] <- try(se(ASR.o$distance))
-    mc.testB[i, 10] <- try(dim(CON)[1])
-    mc.testB[i, 11] <- try(mean(CON$distance))
-    mc.testB[i, 12] <- try(se(CON$distance))
+    mc.testB[i, 8] <- try(mean(as.numeric(ASR.o$distance)))
+    mc.testB[i, 9] <- try(se(as.numeric(ASR.o$distance)))
+    mc.testB[i,10] <- try(max(as.numeric(ASR.o$distance)))
+    mc.testB[i,11] <- try(dim(CON)[1])
+    if(dim(CON)[1] > 0){
+      mc.testB[i,12] <- try(mean(as.numeric(CON$distance)))
+      mc.testB[i,13] <- try(se(as.numeric(CON$distance)))
+      mc.testB[i,14] <- try(max(as.numeric(CON$distance)))
+    }
     } else {
     mc.testB[i, c(3:4, 7:12)] <- NA
   }
@@ -184,5 +192,43 @@ for (i in 1:dim(mc.testB)[1]){
 
 save.image(file = "joint_simulation_I.RData")
 
+plot(log10(-mc.testB$X), mc.testB$ASR.min)
+plot(log10(-mc.testB$Y), mc.testB$ASR.min)
+
+plot(log10(-mc.testB$X), mc.testB$Con.min)
+plot(log10(-mc.testB$Y), mc.testB$Con.Mean)
+
+# Turn XY into AB
+xy_to_ab <- function(x, y, t = 1){
+  x <- abs(x)
+  y <- abs(y)
+  h <- matrix(c(-x, x, y, -y), nrow = 2, ncol = 2, byrow = T)
+  q = expm(h * t)
+  a = q[1, 1]
+  b = q[2, 2]
+  return(c(A = a, B = b))
+  #return(q)
+}
 
 
+xy_to_ab(x=1, y = 0.02)
+
+
+mc.testB$A <- NA; mc.testB$B <- NA
+
+for (i in 1:dim(mc.testB)[1]){
+  if (is.na(mc.testB$X.P[i]) | is.na(mc.testB$Y.P[i])){
+    mc.testB$A[i] <- NA
+    mc.testB$B[i] <- NA
+  } else {
+  mc.testB$A[i] <- xy_to_ab(x = mc.testB$X[i], y = mc.testB$Y[i])[1]
+  mc.testB$B[i] <- xy_to_ab(x = mc.testB$X[i], y = mc.testB$Y[i])[2]
+  }
+}
+
+
+plot((mc.testB$A), mc.testB$ASR.min)
+plot((mc.testB$B), mc.testB$ASR.min)
+
+plot((mc.testB$A), mc.testB$Con.min)
+plot((mc.testB$B), mc.testB$Con.min)
