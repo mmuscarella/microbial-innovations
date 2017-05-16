@@ -17,21 +17,27 @@ curl 'https://signon.jgi.doe.gov/signon/create' --data-urlencode 'login=mmuscar@
 
 out="tee -a JGI_Download.logfile"
 
+if [ ! -d ~/JGI ]; then
+  mkdir ~/JGI
+fi
+
+cd ~/JGI
+
+if [ ! -d output ]; then
+  mkdir output
+fi
+
+if [ ! -d output/gbk ]; then
+  mkdir output/gbk
+fi
+
+if [ ! -d output/img ]; then
+  mkdir output/img
+fi
+
 while IFS=$'\t' read -r -a myArray ; do
 
   JGI=${myArray[1]}
-
-  if [ ! -d output ]; then
-    mkdir output
-  fi
-
-  if [ ! -d output/gbk ]; then
-    mkdir output/gbk
-  fi
-
-  if [ ! -d output/img ]; then
-    mkdir output/img
-  fi
 
   if [[ $JGI == 'JGI Project ID / ITS PID' ]] ; then
     echo "The Mission to Conquer The Microbial World Has Begun"  | tee JGI_Download.logfile
