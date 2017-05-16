@@ -229,14 +229,14 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/GG_explore.png")
+img <- readPNG("../figures/JGI_explore.png")
 grid.raster(img)
 ```
 
 
-## Reroot GreenGenes Tree
+## Reroot IMG Dataset Tree
 ```{r, results = "hide"}
-png(filename="../figures/GG_root.png",
+png(filename="../figures/JGI_root.png",
     width = 1600, height = 1600, res = 96*2)
 
 JGI.full.2 <- drop.tip(JGI.full, missing)
@@ -276,7 +276,7 @@ rm(rt)
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/LTP_root.png")
+img <- readPNG("../figures/JGI_root.png")
 grid.raster(img)
 ```
 
@@ -295,7 +295,16 @@ JGI.meta[which(JGI.meta$taxon_oid %in% rownames(maxdist)), ]
 
 ```
 
+## Trim Genes for Only Those Genomes in Tree
+```{r}
+genes <- read.delim("../data/IMG.KEGG.txt", header = T)
 
+JGItree.r$tip.label[1:5]
+
+genes2 <- genes[genes$OID %in% JGItree.r$tip.label, ]
+
+
+```
 
 
 
@@ -303,8 +312,30 @@ JGI.meta[which(JGI.meta$taxon_oid %in% rownames(maxdist)), ]
 
 ## GreenGenes Exploratory Tree with Cyano Grouping
 ```{r, results = "hide"}
-png(filename="../figures/GG_Cyano.png",
+png(filename="../figures/JGI_Cyano.png",
     width = 1600, height = 1600, res = 96*2)
+
+
+
+JGI.full.tax <- JGI.full.tax[order(match(as.character(JGI.full.tax$taxon_oid), JGItree.r$tip.label)), ]
+
+groupInfo <- split(JGItree.r$tip.label, JGI.full.tax$Domain)
+JGItree.r2 <- groupOTU(JGItree.r, groupInfo, group_name = "Domain2")
+levels(attributes(JGItree.r2)$Domain)  <- c("root", names(groupInfo))
+
+subs <- subtrees(JGItree.r2)
+archaea <- NA
+for (i in 1:length(subs)){
+  if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
+    archaea <- i
+  }
+}
+
+
+
+
+
+
 
 GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", col.tax = 2, tax.levels = 6)
 GG.tax.rooted <- GG.tax[match(GreenTree.r$tip.label, GG.tax$OTU), ]
