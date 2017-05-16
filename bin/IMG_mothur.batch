@@ -7,3 +7,23 @@ filter.seqs(fasta=../output/JGI.good.align, vertical=T, trump=.)
 summary.seqs(fasta=../output/JGI.good.filter.fasta, processors=8)
 unique.seqs(fasta=../output/JGI.good.filter.fasta)
 summary.seqs(fasta=../output/JGI.good.filter.unique.fasta, name=../output/JGI.good.filter.names, processors=8)
+
+
+summary.seqs(fasta=../output/JGI.first.rename.fasta, processors=8)
+screen.seqs(fasta=../output/JGI.first.rename.fasta, maxlength=2000, maxambig=0)
+summary.seqs(fasta=../output/JGI.first.rename.good.fasta, processors=8)
+align.seqs(fasta=../output/JGI.first.rename.good.fasta, reference=silva.nr_v128.align, flip=T, processors=8)
+summary.seqs(fasta=../output/JGI.first.rename.good.align, processors=8)
+summary.seqs(fasta=../output/JGI.first.rename.good.flip.accnos, processors=8)
+screen.seqs(fasta=../output/JGI.first.rename.good.align, minlength=1200, maxhomop=8, processors=8)
+summary.seqs(fasta=../output/JGI.first.rename.good.good.align, processors=8)
+filter.seqs(fasta=../output/JGI.first.rename.good.good.align, vertical=T, trump=.)
+summary.seqs(fasta=../output/JGI.first.rename.good.good.filter.fasta, processors=8)
+unique.seqs(fasta=../output/JGI.first.rename.good.good.filter.fasta)
+summary.seqs(fasta=../output/JGI.first.rename.good.good.filter.unique.fasta, name=../output/JGI.first.rename.good.good.filter.names, processors=8)
+
+
+# FastTree
+FastTree -gtr -nt -gamma JGI.first.rename.good.good.filter.fasta > JGI.full.tree
+
+FastTree -gtr -nt -gamma JGI.first.rename.good.good.filter.unique.fasta > JGI.full.unique.tree
