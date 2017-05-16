@@ -55,35 +55,37 @@ opar <- par(no.readonly = TRUE)  # Saves plot defaults
 run.all <- FALSE
 ```
 
-## Import Green Genes Tree File
+## Import IMG Tree File
 ```{r}
-GG <- read.tree("../data/IMG.tree")
+JGI.full <- read.tree("../data/JGI.full.tree")
+JGI.unique <- read.tree("../data/JGI.unique.tree")
 ```
 
-## Import Taxonomy Information
+## Import Metadata
 ```{r}
-GG.tax <- read.tax("../data/IMG.pds.wang.taxonomy", format = "rdp", col.tax = 2, tax.levels = 6)
-
+JGI.meta <- read.delim("../data/taxontable.txt")
+JGI.result <- read.delim("../data/JGIdownload.txt")
+JGI.match <- read.delim("../data/JGIseqMatchfirst.txt")
 ```
 
 # Edge Length Patterns
 ## Edge Length Distribution
 ```{r, results = "hide"}
-GG.edges <- GG$edge.length
+JGI.edges <- JGI.full$edge.length
 
-png(filename="../figures/GG_BranchLength.png",
+png(filename="../figures/JGI_BranchLength.png",
     width = 800, height = 800, res = 96*2)
 
-par(mar = c(5, 6, 3, 1) + 0.1, oma = c(1,1,1,1))
+par(mar = c(4, 4, 2, 0) + 0.1, oma = c(1,1,1,1))
 
-hist(log10(GG.edges), main = "Green Genes: IMG Isolates",
+hist(log10(JGI.edges), main = "JGI IMG Isolates",
      axes = F, xlab = "", ylab = "", 
-     xlim = c(-4, 0), ylim = c(0, 800), 
+     xlim = c(-9, 1), ylim = c(0, 3000), 
      col = "gray")
 
 
-axis(1, at = c(-4, -3, -2, -1, 0, 1), 
-     labels = expression(10^-4, 10^-3, 10^-2, 10^-1, 1, 10^1),  
+axis(1, at = c(-10, -8, -6, -4, -2, 0, 2), 
+     labels = expression(10^-10, 10^-8, 10^-6, 10^-4, 10^-2, 1, 10^2),  
      las = 1, lwd = 1.5)
 axis(2, labels = T, las = 1, lwd = 1.5)
 
@@ -97,23 +99,23 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/GG_BranchLength.png")
+img <- readPNG("../figures/JGI_BranchLength.png")
 grid.raster(img)
 ```
 
 ## Edge Length vs Support
 ```{r}
-node.tab <- data.frame(matrix(NA, GG$Nnode, 5))
+node.tab <- data.frame(matrix(NA, JGI.full$Nnode, 5))
 colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
-node.tab$node <- as.numeric(c(1:GG$Nnode))
-node.tab$support <- GG$node.label
+node.tab$node <- as.numeric(c(1:JGI.full$Nnode))
+node.tab$support <- JGI.full$node.label
 node.tab[1,3] <- NA
-for (i in 2:GG$Nnode){
-  edge.up <- which(GG$edge[,2] == length(GG$tip.label) + i)
-  node.tab[i,3] <- GG$edge.length[edge.up]
-  edge.down <- which(GG$edge[,1] == length(GG$tip.label) + i)
-  node.tab[i,4] <- GG$edge.length[edge.down[1]]
-  node.tab[i,5] <- GG$edge.length[edge.down[2]]
+for (i in 2:JGI.full$Nnode){
+  edge.up <- which(JGI.full$edge[,2] == length(JGI.full$tip.label) + i)
+  node.tab[i,3] <- JGI.full$edge.length[edge.up]
+  edge.down <- which(JGI.full$edge[,1] == length(JGI.full$tip.label) + i)
+  node.tab[i,4] <- JGI.full$edge.length[edge.down[1]]
+  node.tab[i,5] <- JGI.full$edge.length[edge.down[2]]
 }
 
 node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
@@ -137,7 +139,7 @@ scatterhist <- function(x, y, xlab="", ylab=""){
 ```
 
 ```{r, results = "hide"}
-png(filename="../figures/NodeSupport_GG.png",
+png(filename="../figures/NodeSupport_JGI.png",
     width = 800, height = 800, res = 96*2)
 
 # Upstream
@@ -159,28 +161,65 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/NodeSupport_GG.png")
+img <- readPNG("../figures/NodeSupport_JGI.png")
 grid.raster(img)
 ```
 
-# GreenGenes Tree Exploration
-## GG Exploratory Tree with Domain Grouping
+# JGI Tree Exploration
+## JGI Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
-png(filename="../figures/GG_explore.png",
+png(filename="../figures/JGI_explore.png",
     width = 1600, height = 1600, res = 96*2)
 
-GG.2 <- GG
-GG.tax2 <- GG.tax[match(GG.2$tip.label, GG.tax$OTU), ]
-groupInfo <- split(GG.2$tip.label, GG.tax2$Domain)
-GreenTree <- groupOTU(GG.2, groupInfo, group_name = "Domain")
-levels(attributes(GreenTree)$Domain) <- names(groupInfo)
-ggtree(GreenTree, aes(color = Domain), layout="rectangular") + 
+library("ape")
+
+match <- intersect(JGI.match$Genome, JGI.meta$taxon_oid)
+match <- intersect(JGI.match$Genome, JGI.full$tip.label)
+
+match <- intersect(intersect(JGI.match$Genome, JGI.meta$taxon_oid), JGI.full$tip.label)
+
+missing <- setdiff(intersect(JGI.match$Genome, JGI.full$tip.label), JGI.meta$IMG.Genome.ID)
+
+which(missing %in% JGI.meta$taxon_oid)
+
+JGI.meta$IMG.Genome.ID
+JGI.meta$Genome.Name...Sample.Name
+JGI.meta$taxon_oid
+
+JGI.meta$IMG.Genome.ID == JGI.meta$taxon_oid
+
+JGI.full.2 <- drop.tip(JGI.full, missing)
+JGI.full.2 <- reorder(JGI.full.2, order = "cladewise")
+JGI.full.tax <- JGI.meta[which(JGI.meta$IMG.Genome.ID %in% match), ]
+JGI.full.tax <- JGI.full.tax[order(match(as.character(JGI.full.tax$taxon_oid), JGI.full.2$tip.label)), ]
+
+JGI.meta[grep("2504136002", JGI.meta$taxon_oid), ]
+tail(JGI.full.tax$taxon_oid)
+tail(JGI.full.2$tip.label)
+
+groupInfo <- split(JGI.full.2$tip.label, JGI.full.tax$Domain)
+JGItree <- groupOTU(JGI.full.2, groupInfo, group_name = "Domain")
+
+subs <- subtrees(JGItree)
+archaea <- NA
+archaea2 <- NA
+for (i in 1:length(subs)){
+  if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
+    archaea <- i
+  }
+}
+
+levels(attributes(JGItree)$Domain) <- names(groupInfo)
+ggtree(JGItree, aes(color = Domain), layout="rectangular") + 
   geom_text(aes(label = node), show.legend = FALSE,
             hjust=-0.1, vjust = -0.5, size = 2) + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
-  geom_point2(aes(subset=(node == 3518)), size=3, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+  geom_point2(aes(subset=(node == (archaea + length(JGItree$tip.label)))),
+                  size=3, shape=18, colour=ggplotColours(n = 4)[1], 
+                  fill = "gray80") + 
   scale_color_manual(values=c(ggplotColours(n = 4)[2:3])) 
+
+
 
 # Close Plot Device
 dev.off()
@@ -200,13 +239,31 @@ grid.raster(img)
 png(filename="../figures/GG_root.png",
     width = 1600, height = 1600, res = 96*2)
 
-GreenTree.r <- midpoint.root(GreenTree)
-groupInfo <- split(GG.2$tip.label, GG.tax2$Domain)
-GreenTree.r2 <- groupOTU(GreenTree.r, groupInfo, group_name = "Domain")
-levels(attributes(GreenTree.r2)$Domain) <- c("root", names(groupInfo))
-rt <- ggtree(GreenTree.r2, aes(color = Domain), layout="rectangular")
-rt + geom_point2(aes(subset=(node == 3518)), size=4, shape=18, 
-                 colour=ggplotColours(n = 4)[1], fill = "gray80") + 
+JGI.full.2 <- drop.tip(JGI.full, missing)
+JGItree.r <- midpoint.root(JGI.full.2)
+#JGItree.r <- reorder(JGItree.r, order = "cladewise")
+
+JGI.full.tax <- JGI.full.tax[order(match(as.character(JGI.full.tax$taxon_oid), JGItree.r$tip.label)), ]
+
+groupInfo <- split(JGItree.r$tip.label, JGI.full.tax$Domain)
+JGItree.r2 <- groupOTU(JGItree.r, groupInfo, group_name = "Domain2")
+levels(attributes(JGItree.r2)$Domain)  <- c("root", names(groupInfo))
+
+subs <- subtrees(JGItree.r2)
+archaea <- NA
+for (i in 1:length(subs)){
+  if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
+    archaea <- i
+  }
+}
+
+
+rt2 <- ggtree(JGItree.r2, aes(color = Domain), layout="rectangular")
+rt2 +   geom_point2(aes(subset=(node == (length(JGItree.r2$tip.label) + 1))),
+                  size=3, shape=18, colour=ggplotColours(n = 4)[1], 
+                  fill = "gray80") + 
+    geom_text(aes(label = node), show.legend = FALSE,
+            hjust=-0.1, vjust = -0.5, size = 2) + 
   theme(legend.position="top", legend.key = element_rect(colour = NA)) + 
   scale_color_manual(values=c(ggplotColours(n = 4)[1:3])) 
 
@@ -225,9 +282,24 @@ grid.raster(img)
 
 ## Export Rooted Tree
 ```{r}
-write.tree(GreenTree.r, file = "../data/GG.rooted.tre")
-write.nexus(GreenTree.r, file = "../data/GG.rooted.nex")
+write.tree(JGItree.r, file = "../data/JGI.rooted.tre")
+write.nexus(JGItree.r, file = "../data/JGI.rooted.nex")
+
+# Find Sequences for Dating
+tree.dist <- as.matrix(cophenetic.phylo(JGItree.r))
+maxdist <- which(tree.dist == max(tree.dist), arr.ind=T)
+
+# Use in TreePL
+rownames(maxdist)
+JGI.meta[which(JGI.meta$taxon_oid %in% rownames(maxdist)), ]
+
 ```
+
+
+
+
+
+
 
 ## GreenGenes Exploratory Tree with Cyano Grouping
 ```{r, results = "hide"}
