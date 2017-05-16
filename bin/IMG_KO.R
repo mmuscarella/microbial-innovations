@@ -76,7 +76,7 @@ for (i in 1:length(files)){
 }
 
 # Save KEGG Database
-write.table(img.kegg, file = "../data/IMG.KEGG.txt", quote = F, sep = "\t",
+write.table(img.kegg, file = "../data/JGI.KEGG.txt", quote = F, sep = "\t",
             row.names = F, col.names = T)
 
 # Create 16S Database for Genomes
