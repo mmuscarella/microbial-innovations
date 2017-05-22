@@ -20,33 +20,43 @@ require("phytools")
 require("picante")
 library("methods")
 
-# Load Source Functions
+# Load Source Function
 source("../bin/fitMC.R")
 
 # Import Tree
-GG.um <- read.tree("../data/GG.dated.tree")
+IMG.um <- read.tree("../data/JGI.dated.tree")
 
 # Import and Format Traits (Pathways)
-IMG.traits <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, 
-                         row.names = 1)
+IMG.traits <- read.delim("../data/JGI.KEGG.txt")
 dim(IMG.traits)
-colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
-sum(GG.um$tip.label %in% colnames(IMG.traits))
-sum(colnames(IMG.traits) %in% GG.um$tip.label)
-IMG.traits <- IMG.traits[rowSums(IMG.traits) > 10, ]
-dim(IMG.traits)
+IMG.traits[1:5, 1:5]
 
-# Drop tips not found in trait table
-missing <- subset(GG.um$tip.label,
-                  !(GG.um$tip.label %in% colnames(IMG.traits)))
-IMG.tree <- drop.tip(GG.um, missing)
+IMG.trait.tab <- t(IMG.traits[, -c(1, 2)])
+colnames(IMG.trait.tab) <- IMG.traits[, 2]
+IMG.trait.tab[1:5, 1:5]
+
+
+sum(IMG.um$tip.label %in% colnames(IMG.trait.tab))
+sum(colnames(IMG.trait.tab) %in% IMG.um$tip.label)
+
+IMG.trait.tab <- IMG.trait.tab[rowSums(IMG.trait.tab) > 10, ]
+dim(IMG.trait.tab)
+
+# Drop Genomes Not Found in Traits and Tree
+IMG.trait.tab <- IMG.trait.tab[, which(colnames(IMG.trait.tab) %in% IMG.um$tip.label)]
+dim(IMG.trait.tab)
+
+missing <- setdiff(IMG.um$tip.label, colnames(IMG.trait.tab) )
+IMG.tree <- drop.tip(IMG.um, missing)
+
 sub.trees <- subtrees(IMG.tree)
 
 root.dists <- as.matrix(dist.nodes(IMG.tree))[,length(IMG.tree$tip.label) + 1]
 
 # Reformat Trait Table
-IMG.trait.tab <- data.frame(t(IMG.traits))
+IMG.trait.tab <- data.frame(t(IMG.trait.tab))
 IMG.trait.PA <- (IMG.trait.tab > 0) * 1
+IMG.trait.tab[1:5, 1:5]
 
 # Identify Traits That All Species Have
 complete <- which(apply(IMG.trait.PA, 2, min) == 1)
@@ -57,7 +67,9 @@ print("Those triats have been removed from the analysis", quote = FALSE)
 write.table(complete, "../data/IMG_ASR_CompletePathways.txt", quote = F,
             sep = "\t", row.names = T, col.names = F)
 
-IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+if (length(complete) > 0){
+  IMG.trait.PA <- IMG.trait.PA[ , -c(as.numeric(complete))]
+}
 dim(IMG.trait.PA)
 
 out <- data.frame(matrix(NA, nrow = dim(IMG.trait.PA)[1], ncol = 11))
