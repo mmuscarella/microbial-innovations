@@ -171,8 +171,6 @@ grid.raster(img)
 png(filename="../figures/JGI_explore.png",
     width = 1600, height = 1600, res = 96*2)
 
-library("ape")
-
 match <- intersect(JGI.match$Genome, JGI.meta$taxon_oid)
 match <- intersect(JGI.match$Genome, JGI.full$tip.label)
 
@@ -362,7 +360,7 @@ for (i in 1:length(subs)){
 
 proteo <- NA
 for (i in 1:length(subs)){
-  if (identical(subs[[i]]$tip.label, groupInfo2$Proteobacteria)){
+  if (identical(subs[[i]]$tip.label, groupInfo2$Firmicutes)){
     proteo <- JGItree.r2$edge[which(JGItree.r2$edge[, 2] == i 
                              +  length(JGItree$tip.label)), 1]
   } else {

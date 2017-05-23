@@ -38,10 +38,12 @@ summary.seqs(fasta=../output/JGI.first.rename.good.good.filter.fasta, processors
 unique.seqs(fasta=../output/JGI.first.rename.good.good.filter.fasta)
 summary.seqs(fasta=../output/JGI.first.rename.good.good.filter.unique.fasta, name=../output/JGI.first.rename.good.good.filter.names, processors=8)
 
+python check_unique.py "../output/JGI.rename.good.good.filter.fasta" "../output/JGI.rename.good.good.filter.unique.unique.fasta"
 
+python check_unique.py "../output/JGI.rename.good.good.filter.unique.fasta" "../output/JGI.rename.good.good.filter.unique.unique.fasta"
 
 
 # FastTree
-FastTree -gtr -nt -gamma JGI.first.rename.good.good.filter.fasta > JGI.full.tree
+FastTree -gtr -nt -gamma ../output/JGI.first.rename.good.good.filter.fasta > ../output/JGI.first.tree
 
-FastTree -gtr -nt -gamma JGI.first.rename.good.good.filter.unique.fasta > JGI.full.unique.tree
+FastTree -gtr -nt -gamma ../output/JGI.first.rename.good.good.filter.unique.fasta > ../output/JGI.first.unique.tree
