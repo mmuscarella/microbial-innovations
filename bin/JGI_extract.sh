@@ -65,7 +65,7 @@ for i in $gff ; do
       id=$( grep $( echo $j ) $fna )
       echo "$id"
     fi
-    name=$( echo $iqd | cut -d " " -f 2 )
+    name=$( echo $id | cut -d " " -f 2 )
     echo "$name"
     seq_entry=$( sed -e '/'"$j"'/,/^\s*$/!d' $fna )
     if (( $( echo $seq_entry | wc -c ) > 5000 )); then
@@ -81,7 +81,7 @@ for i in $gff ; do
     new_name=">$j $genome $name"
     echo "$new_name" >> JGI.full.rename.fasta
     echo "$seq" >> JGI.full.rename.fasta
-    if (( $seq_len > 1199 )) ; then
+    if (( $seq_len > 1199 && $seq_len < 4000)) ; then
       echo Yes
       total_full=$(($total_full + 1))
       full=$(($full + 1))
@@ -90,7 +90,7 @@ for i in $gff ; do
       echo ">$genome" >> JGI.rename.fasta
       echo "$seq" >> JGI.rename.fasta
       echo -e "$j\t$name\t$genome" >> JGIseqMatch.txt
-      if (( $seq_len > 1199 && $full == 1 && $seq_len < 2000)); then
+      if (( $seq_len > 1199 && $full == 1 && $seq_len < 4000)); then
         echo Yes
         echo "$new_name" >> JGI.first.fasta
         echo "$seq" >> JGI.first.fasta
