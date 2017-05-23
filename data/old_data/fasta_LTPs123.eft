@@ -1,0 +1,4 @@
+SUFFIX		fasta
+BEGIN
+>*(acc)	*(start)	*(stop)	*(|export_sequence|len(.-))bp	*(|sequence_type)	*(fullname_ltp)	*(hi_tax_ltp)
+*(|export_sequence|format_sequence(firsttab=0;tab=0;width=80))
