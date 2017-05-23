@@ -47,3 +47,5 @@ python check_unique.py "../output/JGI.rename.good.good.filter.unique.fasta" "../
 FastTree -gtr -nt -gamma ../output/JGI.first.rename.good.good.filter.fasta > ../output/JGI.first.tree
 
 FastTree -gtr -nt -gamma ../output/JGI.first.rename.good.good.filter.unique.fasta > ../output/JGI.first.unique.tree
+
+# TreePL
