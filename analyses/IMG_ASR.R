@@ -27,7 +27,7 @@ source("../bin/fitMC.R")
 IMG.um <- read.tree("../data/JGI.dated.tree")
 
 # Import and Format Traits (Pathways)
-IMG.traits <- read.delim("../data/JGI.KEGG.trimmed.txt")
+IMG.traits <- read.delim("../data/IMG.KEGG.trimmed.txt")
 dim(IMG.traits)
 
 IMG.trait.tab <- t(IMG.traits[, -c(1, 2)])
@@ -46,6 +46,7 @@ dim(IMG.trait.tab)
 
 missing <- setdiff(IMG.um$tip.label, colnames(IMG.trait.tab) )
 IMG.tree <- drop.tip(IMG.um, missing)
+length(IMG.tree$tip.label)
 
 sub.trees <- subtrees(IMG.tree)
 
@@ -62,7 +63,7 @@ print(paste("The following gene is found in all taxa: ",
             names(complete), sep = ""), quote = FALSE)
 print("Those genes have been removed from the analysis", quote = FALSE)
 
-write.table(complete, "../data/IMG_ASR_CompletePathways.txt", quote = F,
+write.table(complete, "../data/IMG_ASR_CompleteGenes.txt", quote = F,
             sep = "\t", row.names = T, col.names = F)
 
 if (length(complete) > 0){
