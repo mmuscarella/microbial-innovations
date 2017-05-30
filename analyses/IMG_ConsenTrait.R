@@ -27,7 +27,7 @@ source("../bin/ConsenTrait.R")
 IMG.um <- read.tree("../data/JGI.dated.tree")
 
 # Import and Format Traits (Pathways)
-IMG.traits <- read.delim("../data/JGI.KEGG.txt")
+IMG.traits <- read.delim("../data/IMG.KEGG.txt")
 dim(IMG.traits)
 IMG.traits[1:5, 1:5]
 
