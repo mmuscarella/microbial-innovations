@@ -57,56 +57,56 @@ run.all <- FALSE
 
 ## Import IMG Tree File
 ```{r}
-JGI.full <- read.tree("../data/JGI.first.tree")
-JGI.unique <- read.tree("../data/JGI.first.unique.tree")
+IMG.full <- read.tree("../data/JGI.first.tree")
+IMG.unique <- read.tree("../data/JGI.first.unique.tree")
 ```
 
 ## Import Metadata and Traits
 ```{r}
-JGI.meta <- read.delim("../data/taxontable.txt")
-JGI.result <- read.delim("../data/JGIdownload.txt")
-JGI.match <- read.delim("../data/JGIseqMatchfirst.txt")
-JGI.genes <- read.delim("../data/IMG.KEGG.txt", header = T)
+IMG.meta <- read.delim("../data/taxontable.txt")
+IMG.result <- read.delim("../data/JGIdownload.txt")
+IMG.match <- read.delim("../data/JGIseqMatchfirst.txt")
+IMG.genes <- read.delim("../data/IMG.KEGG.txt", header = T)
 ```
 
 ## Match All Data
 ```{r}
 # Find OIDs that match across all data
-matching <- intersect(intersect(intersect(JGI.match$Genome, JGI.meta$taxon_oid), JGI.full$tip.label), JGI.genes$OID)
+matching <- intersect(intersect(intersect(IMG.match$Genome, IMG.meta$taxon_oid), IMG.full$tip.label), IMG.genes$OID)
 
 # Remove Tips in Tree Not Matching Across All Datasets
-JGI.full.2 <- drop.tip(JGI.full, 
-                       setdiff(JGI.full$tip.label, matching))
+IMG.full.2 <- drop.tip(IMG.full, 
+                       setdiff(IMG.full$tip.label, matching))
 
 # Reorder just in case
-JGI.full.2 <- reorder(JGI.full.2, order = "cladewise")
+IMG.full.2 <- reorder(IMG.full.2, order = "cladewise")
 
 # Removing Any Taxonomy not Matching
-JGI.full.tax <- JGI.meta[which(JGI.meta$IMG.Genome.ID %in% matching), ]
+IMG.full.tax <- IMG.meta[which(IMG.meta$IMG.Genome.ID %in% matching), ]
 
 # Reorder to Match Tips
-JGI.full.tax <- JGI.full.tax[order(match(as.character(JGI.full.tax$taxon_oid), JGI.full.2$tip.label)), ]
+IMG.full.tax <- IMG.full.tax[order(match(as.character(IMG.full.tax$taxon_oid), IMG.full.2$tip.label)), ]
 
 # Removing Any Genes not Matching
-JGI.genes.2 <- JGI.genes[JGI.genes$OID %in% matching, ]
+IMG.genes.2 <- IMG.genes[IMG.genes$OID %in% matching, ]
 
 # Reorder to Match Tips
-JGI.genes.2 <- JGI.genes.2[order(match(as.character(JGI.genes.2$OID), JGI.full.2$tip.label)), ]
+IMG.genes.2 <- IMG.genes.2[order(match(as.character(IMG.genes.2$OID), IMG.full.2$tip.label)), ]
 
 # Check Match
-tail(JGI.full.tax$taxon_oid)
-tail(JGI.full.2$tip.label)
-tail(JGI.genes.2$OID)
+tail(IMG.full.tax$taxon_oid)
+tail(IMG.full.2$tip.label)
+tail(IMG.genes.2$OID)
 
 # Check Sizes
-length(JGI.full.2$tip.label)
-dim(JGI.full.tax)
-dim(JGI.genes.2)
+length(IMG.full.2$tip.label)
+dim(IMG.full.tax)
+dim(IMG.genes.2)
 
 # All looks good. Time to move on. 
 
 # Export Trimmed Genes File
-write.table(JGI.genes.2, "../data/IMG.KEGG.trimmed.txt",
+write.table(IMG.genes.2, "../data/IMG.KEGG.trimmed.txt",
             sep="\t")
 ```
 
@@ -114,14 +114,14 @@ write.table(JGI.genes.2, "../data/IMG.KEGG.trimmed.txt",
 # Edge Length Patterns
 ## Edge Length Distribution
 ```{r, results = "hide"}
-JGI.edges <- JGI.full$edge.length
+IMG.edges <- IMG.full$edge.length
 
-png(filename="../figures/JGI_BranchLength.png",
+png(filename="../figures/IMG_BranchLength.png",
     width = 800, height = 800, res = 96*2)
 
 par(mar = c(4, 4, 2, 0) + 0.1, oma = c(1,1,1,1))
 
-hist(log10(JGI.edges), main = "JGI IMG Isolates",
+hist(log10(IMG.edges), main = "JGI IMG Isolates",
      axes = F, xlab = "", ylab = "", 
      xlim = c(-9, 1), ylim = c(0, 3000), 
      col = "gray")
@@ -142,23 +142,23 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_BranchLength.png")
+img <- readPNG("../figures/IMG_BranchLength.png")
 grid.raster(img)
 ```
 
 ## Edge Length vs Support
 ```{r}
-node.tab <- data.frame(matrix(NA, JGI.full$Nnode, 5))
+node.tab <- data.frame(matrix(NA, IMG.full$Nnode, 5))
 colnames(node.tab) <- c("node", "support", "edge_up", "edge_down1", "edge_down2")
-node.tab$node <- as.numeric(c(1:JGI.full$Nnode))
-node.tab$support <- JGI.full$node.label
+node.tab$node <- as.numeric(c(1:IMG.full$Nnode))
+node.tab$support <- IMG.full$node.label
 node.tab[1,3] <- NA
-for (i in 2:JGI.full$Nnode){
-  edge.up <- which(JGI.full$edge[,2] == length(JGI.full$tip.label) + i)
-  node.tab[i,3] <- JGI.full$edge.length[edge.up]
-  edge.down <- which(JGI.full$edge[,1] == length(JGI.full$tip.label) + i)
-  node.tab[i,4] <- JGI.full$edge.length[edge.down[1]]
-  node.tab[i,5] <- JGI.full$edge.length[edge.down[2]]
+for (i in 2:IMG.full$Nnode){
+  edge.up <- which(IMG.full$edge[,2] == length(IMG.full$tip.label) + i)
+  node.tab[i,3] <- IMG.full$edge.length[edge.up]
+  edge.down <- which(IMG.full$edge[,1] == length(IMG.full$tip.label) + i)
+  node.tab[i,4] <- IMG.full$edge.length[edge.down[1]]
+  node.tab[i,5] <- IMG.full$edge.length[edge.down[2]]
 }
 
 node.tab$edge_down_min <- apply(cbind(node.tab$edge_down1, node.tab$edge_down2), 1, min)
@@ -182,7 +182,7 @@ scatterhist <- function(x, y, xlab="", ylab=""){
 ```
 
 ```{r, results = "hide"}
-png(filename="../figures/NodeSupport_JGI.png",
+png(filename="../figures/IMG_NodeSupport.png",
     width = 800, height = 800, res = 96*2)
 
 # Upstream
@@ -204,21 +204,21 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/NodeSupport_JGI.png")
+img <- readPNG("../figures/IMG_NodeSupport.png")
 grid.raster(img)
 ```
 
-# JGI Tree Exploration
-## JGI Exploratory Tree with Domain Grouping
+# IMG Tree Exploration
+## IMG Exploratory Tree with Domain Grouping
 ```{r, results = "hide"}
-png(filename="../figures/JGI_explore.png",
+png(filename="../figures/IMG_explore.png",
     width = 1600, height = 1600, res = 96*2)
 
 
-groupInfo <- split(JGI.full.2$tip.label, JGI.full.tax$Domain)
-JGItree <- groupOTU(JGI.full.2, groupInfo, group_name = "Domain")
+groupInfo <- split(IMG.full.2$tip.label, IMG.full.tax$Domain)
+IMGtree <- groupOTU(IMG.full.2, groupInfo, group_name = "Domain")
 
-subs <- subtrees(JGItree)
+subs <- subtrees(IMGtree)
 archaea <- NA
 for (i in 1:length(subs)){
   if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
@@ -226,14 +226,14 @@ for (i in 1:length(subs)){
   }
 }
 
-levels(attributes(JGItree)$Domain) <- names(groupInfo)
-ggtree(JGItree, aes(color = Domain), layout="rectangular") + 
+levels(attributes(IMGtree)$Domain) <- names(groupInfo)
+ggtree(IMGtree, aes(color = Domain), layout="rectangular") + 
        geom_text(aes(label = node), show.legend = FALSE,
        hjust=-0.1, vjust = -0.5, size = 2) + 
   theme(legend.position="top", 
         legend.key = element_rect(colour = NA)) + 
   geom_point2(aes(subset=(node == (archaea + 
-             length(JGItree$tip.label)))),
+             length(IMGtree$tip.label)))),
              size=3, shape=18, fill = "gray80", 
              colour=ggplotColours(n = 4)[1]) + 
   scale_color_manual(values=c(ggplotColours(n = 4)[2:3])) 
@@ -248,39 +248,39 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_explore.png")
+img <- readPNG("../figures/IMG_explore.png")
 grid.raster(img)
 ```
 
 
 # Reroot Tree Based on Midpoint
 ```{r}
-JGI.tree.r <- midpoint.root(JGI.full.2)
+IMG.tree.r <- midpoint.root(IMG.full.2)
 
 # Reorder Taxonomy and Genes to Match
-JGI.full.tax <- JGI.full.tax[order(match(as.character(JGI.full.tax$taxon_oid), JGI.tree.r$tip.label)), ]
-JGI.genes.2 <- JGI.genes.2[order(match(as.character(JGI.genes.2$OID), JGI.tree.r$tip.label)), ]
+IMG.full.tax <- IMG.full.tax[order(match(as.character(IMG.full.tax$taxon_oid), IMG.tree.r$tip.label)), ]
+IMG.genes.2 <- IMG.genes.2[order(match(as.character(IMG.genes.2$OID), IMG.tree.r$tip.label)), ]
 
 # Check Match
-tail(JGI.full.tax$taxon_oid)
-tail(JGI.tree.r$tip.label)
-tail(JGI.genes.2$OID)
-all.equal(JGI.tree.r$tip.label,
-          as.character(JGI.full.tax$taxon_oid))
-all.equal(JGI.tree.r$tip.label,
-          as.character(JGI.genes.2$OID))
+tail(IMG.full.tax$taxon_oid)
+tail(IMG.tree.r$tip.label)
+tail(IMG.genes.2$OID)
+all.equal(IMG.tree.r$tip.label,
+          as.character(IMG.full.tax$taxon_oid))
+all.equal(IMG.tree.r$tip.label,
+          as.character(IMG.genes.2$OID))
 ```
 
 ## Plot Rerooted Tree
 ```{r, results = "hide"}
-png(filename="../figures/JGI_root.png",
+png(filename="../figures/IMG_root.png",
     width = 1600, height = 1600, res = 96*2)
 
-groupInfo <- split(JGI.tree.r$tip.label, JGI.full.tax$Domain)
-JGI.tree.r2 <- groupOTU(JGI.tree.r, groupInfo, group_name = "Domain")
-levels(attributes(JGI.tree.r2)$Domain)  <- c("root", names(groupInfo))
+groupInfo <- split(IMG.tree.r$tip.label, IMG.full.tax$Domain)
+IMG.tree.r2 <- groupOTU(IMG.tree.r, groupInfo, group_name = "Domain")
+levels(attributes(IMG.tree.r2)$Domain)  <- c("root", names(groupInfo))
 
-subs <- subtrees(JGI.tree.r2)
+subs <- subtrees(IMG.tree.r2)
 archaea <- NA
 for (i in 1:length(subs)){
   if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
@@ -288,10 +288,10 @@ for (i in 1:length(subs)){
   }
 }
 
-rt2 <- ggtree(JGI.tree.r2, aes(color = Domain),
+rt2 <- ggtree(IMG.tree.r2, aes(color = Domain),
               layout="rectangular")
 rt2 + geom_point2(aes(subset=(node == 
-                  (length(JGI.tree.r2$tip.label) + 1))),
+                  (length(IMG.tree.r2$tip.label) + 1))),
                   size=3, shape=18, 
                   colour=ggplotColours(n = 4)[1], 
                   fill = "gray80") + 
@@ -308,124 +308,124 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_root.png")
+img <- readPNG("../figures/IMG_root.png")
 grid.raster(img)
 ```
 
 ## Export Rooted Tree
 ```{r}
-write.tree(JGI.tree.r, file = "../data/JGI.rooted.tre")
-write.nexus(JGI.tree.r, file = "../data/JGI.rooted.nex")
+write.tree(IMG.tree.r, file = "../data/IMG.rooted.tre")
+write.nexus(IMG.tree.r, file = "../data/IMG.rooted.nex")
 
 # Find Sequences for Dating
-tree.dist <- as.matrix(cophenetic.phylo(JGI.tree.r))
+tree.dist <- as.matrix(cophenetic.phylo(IMG.tree.r))
 maxdist <- which(tree.dist == max(tree.dist), arr.ind=T)
 
 # ID Tips to Use in TreePL
 rownames(maxdist)
-JGI.meta[which(JGI.meta$taxon_oid %in% rownames(maxdist)), ]
+IMG.meta[which(IMG.meta$taxon_oid %in% rownames(maxdist)), ]
 ```
 
 ## TreePL Code
 ## Make Tree Ultrametric
 I used treePL to make the tree ultrametric. My config file was pretty simple. 
 ```{sh}
-treePL ../config/JGI_treePL.config
+treePL ../config/IMG_treePL.config
 
-# Output saved as JGI.dated.tree
+# Output saved as IMG.dated.tree
 ```
 
 
 
 # Explore Other Phylogenetic Groups
-## JGI Exploratory Tree with Cyano Grouping
+## IMG Exploratory Tree with Cyano Grouping
 ```{r, results = "hide"}
-png(filename="../figures/JGI_Groups.png",
+png(filename="../figures/IMG_Groups.png",
     width = 1600, height = 1600, res = 96*2)
 
 # Recheck Matches
-all.equal(JGI.tree.r$tip.label,
-          as.character(JGI.full.tax$taxon_oid))
-all.equal(JGI.tree.r$tip.label,
-          as.character(JGI.genes.2$OID))
+all.equal(IMG.tree.r$tip.label,
+          as.character(IMG.full.tax$taxon_oid))
+all.equal(IMG.tree.r$tip.label,
+          as.character(IMG.genes.2$OID))
 
 # Creating Groupings
-JGI.domain <- JGI.full.tax$Domain
-JGI.phylum <- JGI.full.tax$Phylum
-JGI.class <- JGI.full.tax$Class
-JGI.group <- rep(NA, length(JGI.domain))
+IMG.domain <- IMG.full.tax$Domain
+IMG.phylum <- IMG.full.tax$Phylum
+IMG.class <- IMG.full.tax$Class
+IMG.group <- rep(NA, length(IMG.domain))
 
-for (i in 1:length(JGI.phylum)){
-  if (JGI.phylum[i] == "Cyanobacteria"){
-    JGI.group[i] = "Cyanobacteria"
+for (i in 1:length(IMG.phylum)){
+  if (IMG.phylum[i] == "Cyanobacteria"){
+    IMG.group[i] = "Cyanobacteria"
   }
-  if (JGI.domain[i] == "Archaea"){
-    JGI.group[i] = "Archaea"
+  if (IMG.domain[i] == "Archaea"){
+    IMG.group[i] = "Archaea"
   }
-  if (JGI.class[i] == "Alphaproteobacteria"){
-    JGI.group[i] = "Alpha"
+  if (IMG.class[i] == "Alphaproteobacteria"){
+    IMG.group[i] = "Alpha"
   }
-  if (JGI.class[i] == "Betaproteobacteria"){
-  JGI.group[i] = "Beta"
+  if (IMG.class[i] == "Betaproteobacteria"){
+  IMG.group[i] = "Beta"
   }
-  if (JGI.class[i] == "Gammaproteobacteria"){
-  JGI.group[i] = "Gamma"
+  if (IMG.class[i] == "Gammaproteobacteria"){
+  IMG.group[i] = "Gamma"
   }
-  if (JGI.phylum[i] == "Actinobacteria"){
-  JGI.group[i] = "Actinobacteria"
+  if (IMG.phylum[i] == "Actinobacteria"){
+  IMG.group[i] = "Actinobacteria"
   }
-  if (JGI.phylum[i] == "Firmicutes"){
-  JGI.group[i] = "Firmicutes"
+  if (IMG.phylum[i] == "Firmicutes"){
+  IMG.group[i] = "Firmicutes"
   }
-    if (JGI.phylum[i] == "Bacteroidetes"){
-  JGI.group[i] = "Bacteroidetes"
+    if (IMG.phylum[i] == "Bacteroidetes"){
+  IMG.group[i] = "Bacteroidetes"
   }
 }
 
-groupInfo <- split(JGI.tree.r$tip.label, JGI.group)
-JGI.tree.r3 <- groupOTU(JGI.tree.r, groupInfo, group_name = "Groups")
-levels(attributes(JGI.tree.r3)$Groups) <- c("root",
+groupInfo <- split(IMG.tree.r$tip.label, IMG.group)
+IMG.tree.r3 <- groupOTU(IMG.tree.r, groupInfo, group_name = "Groups")
+levels(attributes(IMG.tree.r3)$Groups) <- c("root",
                  names(groupInfo))
 
 # ID Substrees
-subs <- subtrees(JGI.tree.r3)
+subs <- subtrees(IMG.tree.r3)
 
 # Find Nodes
 archaea <- NA
 for (i in 1:length(subs)){
   if (identical(subs[[i]]$tip.label, groupInfo$Archaea)){
-    archaea <- JGI.tree.r3$edge[
-      which(JGI.tree.r3$edge[, 2] == i
-      +  length(JGI.tree.r3$tip.label)), 1]
+    archaea <- IMG.tree.r3$edge[
+      which(IMG.tree.r3$edge[, 2] == i
+      +  length(IMG.tree.r3$tip.label)), 1]
   }
 }
 
 cyano <- NA
 for (i in 1:length(subs)){
   if (identical(subs[[i]]$tip.label, groupInfo$Cyanobacteria)){
-    cyano <- JGI.tree.r3$edge[
-      which(JGI.tree.r3$edge[, 2] == i 
-      +  length(JGI.tree.r3$tip.label)), 1]
+    cyano <- IMG.tree.r3$edge[
+      which(IMG.tree.r3$edge[, 2] == i 
+      +  length(IMG.tree.r3$tip.label)), 1]
   }
 }
 
 alpha <- NA
 for (i in 1:length(subs)){
   if (identical(subs[[i]]$tip.label, groupInfo$Alpha)){
-    alpha <- JGI.tree.r3$edge[
-      which(JGI.tree.r3$edge[, 2] == i 
-      +  length(JGI.tree.r3$tip.label)), 1]
+    alpha <- IMG.tree.r3$edge[
+      which(IMG.tree.r3$edge[, 2] == i 
+      +  length(IMG.tree.r3$tip.label)), 1]
   } 
 }
 
 # How Many in each Group
-table(JGI.group)
+table(IMG.group)
 
 # Plot Exploratory Tree
-JGI <- ggtree(JGI.tree.r3, 
+IMG <- ggtree(IMG.tree.r3, 
               aes(color = Groups, layout="rectangular"))
 
-JGI + geom_text(aes(label = node), show.legend = FALSE,
+IMG + geom_text(aes(label = node), show.legend = FALSE,
             hjust=-0.1, vjust = -0.5, size = 2) + 
   geom_point2(aes(subset=(node == archaea)),
               size=4, shape=18, colour=ggplotColours(n = 4)[1],
@@ -442,55 +442,55 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_Groups.png")
+img <- readPNG("../figures/IMG_Groups.png")
 grid.raster(img)
 ```
 
 # Import Ultrametric Tree
 ```{r, results = "hide"}
-JGI.um <- read.tree("../data/JGI.dated.tree")
+IMG.um <- read.tree("../data/IMG.dated.tree")
 
 # Reorder just in case
-JGI.um.2 <- reorder(JGI.um, order = "cladewise")
+IMG.um.2 <- reorder(IMG.um, order = "cladewise")
 
 # Check Names Again
-all.equal(JGI.um.2$tip.label,
-          as.character(JGI.full.tax$taxon_oid))
-all.equal(JGI.um.2$tip.label,
-          as.character(JGI.genes.2$OID))
+all.equal(IMG.um.2$tip.label,
+          as.character(IMG.full.tax$taxon_oid))
+all.equal(IMG.um.2$tip.label,
+          as.character(IMG.genes.2$OID))
 
 # Need to Reorder
-JGI.full.tax <- JGI.full.tax[
-  order(match(as.character(JGI.full.tax$taxon_oid), 
-              JGI.um.2$tip.label)), ]
-JGI.genes.2 <- JGI.genes.2[
-  order(match(as.character(JGI.genes.2$OID), 
-              JGI.um.2$tip.label)), ]
+IMG.full.tax <- IMG.full.tax[
+  order(match(as.character(IMG.full.tax$taxon_oid), 
+              IMG.um.2$tip.label)), ]
+IMG.genes.2 <- IMG.genes.2[
+  order(match(as.character(IMG.genes.2$OID), 
+              IMG.um.2$tip.label)), ]
 
 # Check Names Again
-all.equal(JGI.um.2$tip.label,
-          as.character(JGI.full.tax$taxon_oid))
-all.equal(JGI.um.2$tip.label,
-          as.character(JGI.genes.2$OID))
+all.equal(IMG.um.2$tip.label,
+          as.character(IMG.full.tax$taxon_oid))
+all.equal(IMG.um.2$tip.label,
+          as.character(IMG.genes.2$OID))
 ```
 
 ## Plot Ultrametric Tree
 ```{r}
-png(filename="../figures/JGI_dated.png",
+png(filename="../figures/IMG_dated.png",
     width = 1600, height = 1600, res = 96*2)
 
 # Create Grouping
-JGI.domain <- JGI.full.tax$Domain
-groupInfo <- split(JGI.um.2$tip.label, JGI.domain)
-JGI.um.3 <- groupOTU(JGI.um.2, groupInfo, group_name = "Domain")
-levels(attributes(JGI.um.3)$Domain) <- c("root",
+IMG.domain <- IMG.full.tax$Domain
+groupInfo <- split(IMG.um.2$tip.label, IMG.domain)
+IMG.um.3 <- groupOTU(IMG.um.2, groupInfo, group_name = "Domain")
+levels(attributes(IMG.um.3)$Domain) <- c("root",
                                          names(groupInfo))
 
-um <- ggtree(JGI.um.3, aes(color = Domain),
+um <- ggtree(IMG.um.3, aes(color = Domain),
              layout="rectangular")
 
 um + geom_point2(aes(subset=(node == 
-                 (length(JGI.tree.r2$tip.label) + 1))), 
+                 (length(IMG.tree.r2$tip.label) + 1))), 
                  size=4, shape=18, 
                  colour=ggplotColours(n = 4)[1], 
                  fill = "gray80") + 
@@ -508,21 +508,21 @@ rm(um)
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_dated.png")
+img <- readPNG("../figures/IMG_dated.png")
 grid.raster(img)
 ```
 
 # Branch Length Analysis (This needs updates, later)
 ## Branch Lenght Comparision 
 ```{r, results = "hide"}
-png(filename="../figures/JGI_Branch_Comparision.png",
+png(filename="../figures/IMG_Branch_Comparision.png",
     width = 800, height = 800, res = 96*2)
 
 # Are nodes the same?
-all.equal(JGI.tree.r2$node.label, JGI.um.2$node.label)
+all.equal(IMG.tree.r2$node.label, IMG.um.2$node.label)
 
-reg <- JGI.tree.r2$edge.length
-um <- JGI.um.2$edge.length
+reg <- IMG.tree.r2$edge.length
+um <- IMG.um.2$edge.length
 
 zero.branch <- which(reg == 0 | um == 0)
 reg.l <- log10(reg[-zero.branch])
@@ -566,7 +566,7 @@ rm(mod1)
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_Branch_Comparision.png")
+img <- readPNG("../figures/IMG_Branch_Comparision.png")
 grid.raster(img)
 ```
 
@@ -584,8 +584,8 @@ if (run.all == TRUE){
   colnames(um.thres) <- c("threshold", "nodes", "polytomies", "avg.polytomy")
   um.thres$threshold <- 10^c(seq(-3, 2, length.out = 100))
   
-  phy1 <- JGI.tree.r2
-  phy2 <- JGI.um.2
+  phy1 <- IMG.tree.r2
+  phy2 <- IMG.um.2
   
   for (i in 1:dim(tree.thres)[1]){
     phy.grained <- di2multi2(phy1, tree.thres[i,1])
@@ -611,7 +611,7 @@ if (run.all == TRUE){
 
 ```{r, results = "hide"}
 if (run.all == TRUE){
-  png(filename="../figures/JGI_Tree_Topology.png",
+  png(filename="../figures/IMG_Tree_Topology.png",
       width = 1600, height = 1600, res = 96*2)
   
   layout(matrix(1:6, 3))
@@ -671,13 +671,13 @@ if (run.all == TRUE){
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/JGI_Tree_Topology.png")
+img <- readPNG("../figures/IMG_Tree_Topology.png")
 grid.raster(img)
 ```
 
 ## Calculate Local Minimums from Edge Lengths and Maximum from Polytomies
 ```{r}
-den.dis <- density(log10(JGI.edges))
+den.dis <- density(log10(IMG.edges))
 mins <- peaks(den.dis$x, den.dis$y, mode = "min")
 maxs <- peaks(den.dis$x, den.dis$y, mode = "max")
 ```
@@ -691,7 +691,7 @@ if (run.all == TRUE){
   
   thres.info <- vector(mode = "list", length = 100)
   
-  phy1 <- JGI.tree.r2
+  phy1 <- IMG.tree.r2
   
   for (i in 1:dim(time.thres)[1]){
     phy.grained <- di2multi2(phy1, time.thres[i,1])
@@ -767,9 +767,9 @@ if (run.all == TRUE){
 
 ## Test Geological Window
 ```{r}
-thres = 0.005
+thres = 0.01
 
-test.phy <- di2multi3(phy1 = GreenTree.r2, phy2 = GreenTree.um, 
+test.phy <- di2multi3(phy1 = IMG.tree.r2, phy2 = IMG.um.2, 
                         tol = thres)
 poly.node <- test.phy$multi.new
 test.phy <- node.age(test.phy)
@@ -792,50 +792,17 @@ test.tree + geom_point2(aes(subset=(node %in% c(poly.node))), size = 3,
   geom_rect(data = geo.test, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
               color="grey80", fill = "gray", alpha=0.5, inherit.aes = FALSE)
 
-rm(test.tree)
-```
-
-
-
-# Stopping Point
-# Still needs work in Branch section
-# Trait Innovation
-```{r}
-IMG.traits <- read.delim("../data/predicted_patyways.L3.txt",
-                         skip = 1, row.names = 1)
-dim(IMG.traits)
-colnames(IMG.traits) <- gsub("X", "", colnames(IMG.traits))
-sum(GreenTree.um$tip.label %in% colnames(IMG.traits))
-sum(colnames(IMG.traits) %in% GreenTree.um$tip.label)
-
-rowSums(IMG.traits > 1)
-
-# Drop tips not found in trait table
-missing <- subset(GreenTree.um$tip.label, 
-                  !(GreenTree.um$tip.label %in% colnames(IMG.traits)))
-
-IMG.tree <- drop.tip(GreenTree.r, missing)
-
-missing <- subset(GreenTree.r$tip.label, 
-                  !(GreenTree.r$tip.label %in% colnames(IMG.traits)))
-
-IMG.tree <- drop.tip(GreenTree.um, missing)
-
-IMG.trait.tab <- data.frame(colnames(IMG.traits), t(IMG.traits))
-
-precal <- read.delim("../data/predicted_patyways.L3.txt", skip = 1, row.names = 1)
-dim(precal)
-
 
 ```
 
 
+# Traits
 ## ConsenTrait Predictions
 ```{r}
 IMG.Cons <- read.delim("../data/IMG_ConsenTrait.txt")
 
 # How "Deep" are traits conserved
-png(filename="../figures/GG_TraitConservation.png",
+png(filename="../figures/IMG_TraitConservation.png",
       width = 800, height = 800, res = 96*2)
   
 par(mar = c(4, 4, 1, 1))
@@ -853,7 +820,7 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/GG_TraitConservation.png")
+img <- readPNG("../figures/IMG_TraitConservation.png")
 grid.raster(img)
 ```
 
@@ -862,25 +829,24 @@ grid.raster(img)
 # Trait Origins
 head(IMG.Cons)
 length(unique(IMG.Cons$trait))
-IMG.Cons2 <- IMG.Cons[-c(which(IMG.Cons$node == "Root")), ]
 
-root.traits <- unique(IMG.Cons$trait[which(IMG.Cons$node == "Root")])
+# No Root Traits
+#IMG.Cons2 <- IMG.Cons[-c(which(IMG.Cons$node == "Root")), ]
+#root.traits <- unique(IMG.Cons$trait[which(IMG.Cons$node == "Root")])
 
+IMG.traits <- IMG.genes.2[, grepl("K0", colnames(IMG.genes.2))]
 
 traits <- unique(rownames(IMG.traits[rowSums(IMG.traits) > 10, ]))
 length(traits)
 
-root.traits <- unique(IMG.Cons$trait[which(IMG.Cons$node == "Root")])
-traits[root.traits]
+IMG.Cons$distance2 <- max(IMG.Cons$distance) - IMG.Cons$distance
 
-IMG.Cons2$distance2 <- max(IMG.Cons2$distance) - IMG.Cons2$distance
-
-trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons2$trait)), 5))
+trait.sum <- data.frame(matrix(NA, length(unique(IMG.Cons$trait)), 5))
 colnames(trait.sum) <- c("Trait", "FirstDate", "MedianDate", "LateDate", "NumEvol")
 
-for (i in 1:length(unique(IMG.Cons2$trait))){
-  trait <- unique(IMG.Cons2$trait)[i]
-  temp <- IMG.Cons2[IMG.Cons2$trait == trait, ]
+for (i in 1:length(unique(IMG.Cons$trait))){
+  trait <- unique(IMG.Cons$trait)[i]
+  temp <- IMG.Cons[IMG.Cons$trait == trait, ]
   
   yearly.evol <- quantile(temp$distance2)[2]
   med.evol <- quantile(temp$distance2)[3]
@@ -899,6 +865,8 @@ trait.sum.Con <- trait.sum[trait.sum$NumEvol > 0, ]
 ## ASR Results
 ```{r}
 IMG.ASR <- read.delim("../data/IMG_ASR_long.txt")
+# temp
+#IMG.ASR <- read.delim("../data/IMG_ASR_PathwaysTemp.csv")
 
 IMG.ASR <- IMG.ASR[complete.cases(IMG.ASR$R.Dist), ]
 
