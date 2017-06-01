@@ -23,10 +23,15 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
 
   # Replace any negative branch lengths
   root_tree$edge.length[root_tree$edge.length <= 0] = 0.00001
-  
+
   root_tree$node.label.old <- root_tree$node.label
-  root_tree$node.label <- as.character(1:root_tree$Nnode + 
+  root_tree$node.label <- as.character(1:root_tree$Nnode +
                                          length(root_tree$tip.label))
+
+  # Calculate Root Distances
+  root.dists <- as.matrix(dist.nodes(root_tree))[,
+                          length(root_tree$tip.label) + 1]
+
 
   # ID all subtrees
   subtree <- subtrees(root_tree, wait = FALSE)
@@ -34,7 +39,8 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
   # Initializing Results Table
   y = rep(NA, (length(subtree) * (dim(table)[2] - 1)))
   cluster_size_tab <- data.frame(trait = NA, subtree = NA, node = NA,
-                                 distance = NA, cluster_size = NA)
+                                 distance = NA, distance.r = NA, 
+                                 cluster_size = NA)
 
   # Loop Through Traits
   for (i in 2:ncol(table)){
@@ -56,6 +62,7 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
     positives <- vector(mode = "character", length = 0)
     cluster_size <- numeric(length=0)
     cluster_dist <- numeric(length = 0)
+    cluster_dist_root <- numeric(length = 0)
     node_positive <- vector(mode = "character", length = 0)
 
     # Loop through all subtrees and determine if any subtrees have >90% positives
@@ -66,12 +73,14 @@ ConsenTrait <- function(tree = "", traits = "", cutoff = 0.9,
         if (all(is.na(match_test))){
           positives <- c(positives,tip_names)
           node_positive <- subtree[[j]]$node.label[1]
-          
+
           rand_tips <- sample(tip_names, size = 5, replace = T)
           cluster_dist <- distRoot(subtree[[j]], rand_tips, method = c("p"))
+          cluster_dist_root <- root.dists[node_positive]
           cluster_size <- length(subtree[[j]]$tip.label)
-          cluster_size_tab[j + length(subtree) * (i - 2), ] <- c(i - 1, j, 
-                               node_positive, mean(cluster_dist), cluster_size)
+          cluster_size_tab[j + length(subtree) * (i - 2), ] <- c(colnames(table)[i], j,
+                               node_positive, mean(cluster_dist), 
+                               cluster_dist_root, cluster_size)
 
         } else {
           if (any(is.na(match_test))) {

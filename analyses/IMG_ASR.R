@@ -24,7 +24,7 @@ library("methods")
 source("../bin/fitMC.R")
 
 # Import Tree
-IMG.um <- read.tree("../data/JGI.dated.tree")
+IMG.um <- read.tree("../data/IMG.dated.tree")
 
 # Import and Format Traits (Pathways)
 IMG.traits <- read.delim("../data/IMG.KEGG.trimmed.txt")
