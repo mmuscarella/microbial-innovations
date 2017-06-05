@@ -61,7 +61,7 @@ IMG.trait.tab2 <- data.frame(Genome = colnames(IMG.trait.tab), t(IMG.trait.tab))
 IMG.trait.tab2[1:5, 1:5]
 
 # Test
-IMG.trait.tab2 <- IMG.trait.tab2[, 1:5]
+# IMG.trait.tab2 <- IMG.trait.tab2[, 1:5]
 
 # Run ConsenTrait on Pathways
 print("Running ConsenTrait on Kegg Pathways", quote = F)
