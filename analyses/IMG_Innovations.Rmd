@@ -877,12 +877,47 @@ head(IMG.ASR)
 ## Trait Origin Summary
 ```{r}
 length(subs)
+subs.names <- rep(NA, length(subs))
+for(i in 1:length(subs)){
+  subs.names[i] <- subs[[i]]$name
+}
 
 # Identify Origins (First Occurence in Clade)
+traits <- levels(IMG.ASR$Trait)
+origins <- data.frame(matrix(NA, nrow = 1, ncol = dim(IMG.ASR)[2]))
+colnames(origins) <- colnames(IMG.ASR)
+counter = 1
+for(i in traits){
+  temp <- IMG.ASR[which(IMG.ASR$Trait == i), ]
+  if(dim(temp)[1] > 1){
+    print("yes")
+    tip_names <- vector(mode="character", length=0)
+    for(j in 1:dim(temp)[1]){
+      temp_node <- which(subs.names == temp$Des[j])
+      positives <- subs[[temp_node]]$tip.label
+      if(all(is.na(match(tip_names, positives)))){
+        tip_names <- c(tip_names, positives)
+        origins[counter, ] <- temp[j, ]
+        counter = counter + 1
+      }
+    }
+  }
+  if(dim(temp)[1] == 1){
+    origins[counter, ] <- temp
+    counter = counter + 1
+  }
+}
 
 
+```
 
-asr.mean <- mean(IMG.ASR$R.Dist)
+
+# Plot Origin Statistics
+```{r}
+hist(origins$R.Dist)
+
+asr.mean <- mean(origins$R.Dist)
+asr.se <- se(origins$R.Dist)
 
 plot(IMG.ASR$R.Dist)
 
@@ -891,6 +926,12 @@ hist(IMG.Cons$distance)
 
 ```
 
+# Tree with Time Line
+```{r}
+
+
+
+```
 
 
 
@@ -1291,7 +1332,7 @@ graphics.off()
 #```
 ## Show Plot
 #```{r}
-img <- readPNG("../figures/GG_TraitASRDates.png")
+img <- readPNG("../figures/old_figs/GG_TraitASRDates.png")
 grid.raster(img)
 ```
 
@@ -1785,15 +1826,4 @@ aggregate(trait.ratios$Ratio ~ trait.ratios$Trait, FUN = mean)
 
 
 
-## ConsenTrait Gene Predictions
-```{r}
-# Import ConsenTrait Predictions
-cons.genes <- read.delim("../data/IMG_Genes_ConsenTrait.txt")
 
-dim(cons.genes)
-length(unique(cons.genes$trait))
-length(which(cons.genes$node == "Root"))
-
-root.cons <- cons.genes[which(cons.genes$node == "Root"), ]
-
-```
